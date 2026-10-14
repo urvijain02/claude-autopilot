@@ -1,0 +1,24 @@
+{
+  "name": "claude-autopilot",
+  "description": "Unattended ticket-to-PR autonomous engineering pipeline for Claude Code",
+  "owner": {
+    "name": "Urvi Jain",
+    "email": "34423017+urvijain02@users.noreply.github.com"
+  },
+  "plugins": [
+    {
+      "name": "autopilot",
+      "description": "Unattended Jira/Issue-to-PR autonomous software engineering pipeline for Claude Code — tests written first, deterministic shell gates, and an independent review-and-fix loop. Multi-repo; no local clone required.",
+      "version": "1.0.0",
+      "source": ".",
+      "author": {
+        "name": "Urvi Jain",
+        "email": "34423017+urvijain02@users.noreply.github.com"
+      },
+      "homepage": "https://github.com/urvijain02/claude-autopilot",
+      "repository": "https://github.com/urvijain02/claude-autopilot",
+      "license": "MIT",
+      "keywords": ["autopilot", "swe-agent", "pipeline", "tdd", "claude-code", "developer-tools", "ai-engineer"]
+    }
+  ]
+}

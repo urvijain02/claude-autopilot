@@ -1,0 +1,31 @@
+{
+  "_comment": "Copy to ~/.claude/autopilot/config.json. There is no repo map — a project can span many repos, so the primary repo is provided at run time (you paste its link) and connected repos are discovered during analysis. This file holds only defaults.",
+
+  "default_base_branch": "main",
+  "//human_gates": "Whether the run pauses for you to approve the plan and sign off before commit. False means it goes from ticket to open PRs without stopping. This has no effect on the quality gates (tests, build) — those always run and are always read.",
+  "human_gates": false,
+
+  "//cleanup_after_pr": "Whether to delete a ticket's clones once its PRs are open. This governs the clones only — a run always finalises (phase done, marker removed, summary printed) regardless. Leave false to keep the working copies around for inspection.",
+  "cleanup_after_pr": false,
+
+  "//workspace_root": "Where the ephemeral clones go, one directory per ticket. The AUTOPILOT_WORKSPACE_DIR env var overrides this. Move it to a bigger disk if the repos you work on are large.",
+  "workspace_root": "~/.claude/autopilot/work",
+
+  "//state_root": "Where a run's durable output lives (spec, plan, findings, gate verdicts, log.md) — one directory per ticket. The AUTOPILOT_STATE_DIR env var overrides this. Point it somewhere browsable if you'd rather read runs outside ~/.claude.",
+  "state_root": "~/.claude/autopilot/state",
+
+  "//orgs": "Optional. GitHub orgs or username the pipeline may search (via gh) when analysis names a connected repo, to suggest its remote for you to confirm. Leave empty to always be asked for the link.",
+  "orgs": [],
+
+  "//jira_site": "Optional. Your Atlassian site host (e.g. yourcompany.atlassian.net). Used as the cloudId and as the host in the PR body's ticket link. If left empty, Jira steps are skipped or resolved via prompt mode.",
+  "jira_site": "",
+
+  "//slack_channel": "Channel id (C0...) to post PR links to once the PRs are open. Leave empty and the post is skipped and logged rather than guessed.",
+  "slack_channel": "",
+
+  "//jira_transitions": "Filled in for you. The first time a project's in-progress or in-review status can't be matched automatically, you're asked once and the answer is cached here per project key, e.g. { \"ABC\": { \"start\": \"In Progress\", \"review\": \"In Review\" } }. Status names, not transition ids — ids go stale as the ticket moves.",
+  "jira_transitions": {},
+
+  "//auto_expand_connected": "If true, provision connected repos the analyst identifies without asking (still asks for the link if it can't resolve one). If false, confirm each connected repo with you first.",
+  "auto_expand_connected": false
+}

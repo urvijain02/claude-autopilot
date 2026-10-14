@@ -1,0 +1,8 @@
+.DS_Store
+Thumbs.db
+*.log
+.claude/
+node_modules/
+obj/
+bin/Debug/
+bin/Release/
