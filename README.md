@@ -1,10 +1,138 @@
-# autopilot
+# Claude Autopilot: Model-Agnostic Autonomous SWE-Agent Pipeline
 
-Takes a Jira ticket through to open pull requests without supervision.
+[![Architecture: Model-Agnostic](https://img.shields.io/badge/Architecture-Model--Agnostic-blueviolet)](#-is-this-locked-into-anthropics-claude-ecosystem)
+[![Verification: Deterministic TDD](https://img.shields.io/badge/Verification-Deterministic_TDD-green)](#two-kinds-of-gate-dont-confuse-them)
+[![Platform: Claude Code | Universal](https://img.shields.io/badge/Platform-Claude_Code_%7C_Universal-blue)](#architecture--state-machine)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-Failing tests are written before the production change, stage outcomes are decided by shell scripts rather than by the model reading its own work, and the review is done by a separate agent on a stronger model tier than the one that wrote the code — then looped through analyse and fix. At the iteration cap it escalates if anything blocking survives, and ships with the leftovers recorded if only minor findings remain.
+Takes a Jira ticket or GitHub issue through to open pull requests without supervision.
+
+Failing tests are written before the production change, stage outcomes are decided by shell scripts rather than by the model reading its own work, and the review is done by a separate agent on a stronger model tier than the one that wrote the code — then looped through analyze and fix. At the iteration cap it escalates if anything blocking survives, and ships with the leftovers recorded if only minor findings remain.
 
 It works across several repos in one run, clones what it needs into a throwaway workspace (nothing has to be checked out beforehand), and picks up where it left off if a run is interrupted.
+
+---
+
+## Architecture & State Machine
+
+The pipeline operates as an explicit finite-state machine backed by disk-persisted state (`$STATE/state.json`), ensuring crash resilience and resumability. For formal JSON schemas, convergence guarantees, and quality gate contracts, see the [System Architecture Specification (RFC-001)](docs/SPECIFICATION.md).
+
+```mermaid
+flowchart TD
+    subgraph Top_Row ["Preparation & Verification"]
+        direction LR
+        subgraph Plan_Phase ["1. Ingestion and Planning"]
+            direction TB
+            Start(["/autopilot:engage PROJ-123"]) --> Preflight{"Preflight Check"}
+            Preflight -->|Verified| Provision["Provision Workspace"]
+            Provision --> Req["Requirements Analyst"]
+            Req --> Plan["Test Planner"]
+            Plan --> Branch["Feature Branch*"]
+        end
+
+        subgraph TDD_Phase ["2. Deterministic TDD Quality Gates"]
+            direction TB
+            WriteTests["Test Writer* (Sonnet)"] --> RedGate{"gate-tests.sh<br/>--expect-fail"}
+            RedGate -->|Red Pass| Implement["Implementer* (Sonnet)"]
+            Implement --> GreenGate{"gate-tests.sh + gate-build.sh"}
+        end
+    end
+
+    subgraph Review_Phase ["3. Adversarial Review and Delivery"]
+        %% Delivery flow on the left
+        Review["Adversarial Reviewer* (Opus)"] -->|Clean or Minor at Cap| Commit["Committer* Subagent"]
+        Commit --> Ship["Open GitHub PR via gh"]
+        Ship --> Updates["Ticket and Slack Updates"]
+        Updates --> Done(["Pipeline Complete"])
+
+        %% Escalation
+        Review -->|Blocking at Cap| Escalate["Escalate to Human"]
+
+        %% Fix Loop on the right (directly aligned with GreenGate)
+        Review -->|Findings| Findings["review-findings.json*"]
+        Findings --> Triage["Review Analyst*"]
+        Triage --> Fixer["Targeted Fixer*"]
+    end
+
+    Branch --> WriteTests
+    GreenGate -->|"All Tests and Build Pass"| Review
+    Fixer -->|"Retest Gates (Loop Cap: 3)"| GreenGate
+```
+
+> [!NOTE]
+> **Multi-Repo Fan-Out (`*`):** Stages marked with an asterisk (`*`) automatically fan out per repository recorded in `state.json.repos[]`. Each repository executes isolated quality gates and review passes, while coordinating against the shared test plan in `$STATE/test-plan.md`.
+
+### Multi-Repo Coordination Architecture
+
+Real-world engineering tickets frequently span multiple repositories (e.g. updating a schema or API contract in a backend microservice, then updating client callers and frontend components in dependent repositories). Claude Autopilot coordinates this atomically without pre-cloning:
+
+* **Dynamic Dependency Discovery:** The `requirements-analyst` inspects ticket specifications and detects connected repositories without requiring hardcoded repository mappings.
+* **Isolated Clones, Unified Plan:** Each repository is cloned into an isolated disposable workspace (`~/.claude/autopilot/work/<TICKET>/repos/<REPO>`). Subagents author code independently in each repository, but coordinate contract boundaries against a shared multi-repo plan (`$STATE/test-plan.md`).
+* **Atomic Cross-Linked Pull Requests:** When quality gates pass across all affected repositories, the `committer` subagent authors conventional commits per repo, opens individual PRs, and cross-links sibling PR URLs in each PR description for synchronized team reviews.
+
+### Asymmetric Subagent Hierarchy & Context Isolation
+
+To eliminate LLM sycophancy (models rubber-stamping their own mistakes), the authoring and review roles are strictly decoupled into isolated contexts across asymmetric model tiers:
+
+```mermaid
+flowchart LR
+    Orchestrator["Orchestrator (The Brain)\n• Drives State Machine\n• Zero Direct Code Edits\n• Enforces 3-Loop Cap"]
+    
+    Orchestrator --> Req["Requirements Analyst\n(Sonnet - Read Only)"]
+    Orchestrator --> Plan["Test Planner\n(Sonnet - Multi-Repo)"]
+    Orchestrator --> Writer["Test Writer\n(Sonnet - Red Tests)"]
+    Orchestrator --> Impl["Implementer\n(Sonnet - Green Code)"]
+    Orchestrator --> Reviewer["Adversarial Reviewer\n(Opus - Isolated Context)"]
+    Orchestrator --> Analyst["Review Analyst\n(Sonnet - Triage)"]
+    Orchestrator --> Fixer["Fixer\n(Sonnet - Targeted Fixes)"]
+    Orchestrator --> Commit["Committer\n(Sonnet - Git/PR)"]
+
+    Impl -.-> Gate1["gate-tests.sh\n(Deterministic Shell)"]
+    Writer -.-> Gate2["gate-tests.sh --expect-fail\n(TDD Red Verification)"]
+    Reviewer -.-> Schema["review-findings.json\n(Write-Only Permissions)"]
+```
+
+---
+
+## 🛠️ Supported Target Languages & Tech Stacks
+
+Claude Autopilot is designed to write code and verify tests across any programming language. Stack detection and deterministic gates are handled by modular POSIX scripts in `bin/`:
+
+| Ecosystem / Stack | Detection Manifest | Deterministic Build Gate | Deterministic Test Gate | Out-of-the-Box Status |
+| :--- | :--- | :--- | :--- | :---: |
+| **Node.js / TypeScript** | `package.json` | `npm run build` / `typecheck` / `tsc` | `npm test` (native `node:test`, Jest, Vitest, Mocha) | ✅ **Shipped** |
+| **.NET (C# / F#)** | `*.sln`, `*.slnx`, `*.csproj` | `dotnet build` | `dotnet test` (with offline feed fallback) | ✅ **Shipped** |
+| **Python** | `pyproject.toml`, `requirements.txt` | `python -m py_compile` | `pytest` | ⚡ *Easily extensible (see [Guide](CONTRIBUTING.md#3-extending-language-support-for-target-repositories-eg-rust-go-python))* |
+| **Rust** | `Cargo.toml` | `cargo check --tests` | `cargo test` | ⚡ *Easily extensible (see [Guide](CONTRIBUTING.md#3-extending-language-support-for-target-repositories-eg-rust-go-python))* |
+| **Go** | `go.mod` | `go build ./...` | `go test ./...` | ⚡ *Easily extensible (see [Guide](CONTRIBUTING.md#3-extending-language-support-for-target-repositories-eg-rust-go-python))* |
+
+> **Extending to New Stacks:** Adding support for any compiled or interpreted language requires only adding a `case` statement to `bin/detect-stack.sh`, `bin/gate-build.sh`, and `bin/gate-tests.sh`. See the [Contributor Walkthrough](CONTRIBUTING.md#3-extending-language-support-for-target-repositories-eg-rust-go-python).
+
+---
+
+## ❓ Is this locked into Anthropic's Claude ecosystem?
+
+**No.** While distributed as a 1-click plugin for Claude Code, the core architecture is strictly provider-agnostic:
+
+1. **Un-fakeable Shell Gates:** All build and test verdicts come from deterministic shell scripts (`gate-tests.sh`, `gate-build.sh`), not model self-reporting. The model cannot hallucinate or argue past failing exit codes.
+2. **Standardized JSON State Protocol:** The orchestrator communicates via vendor-neutral JSON schemas (`state.json`, `review-findings.json`, `fix-list.json`). Any frontier model—OpenAI (GPT-4o/o3), Google Gemini, DeepSeek, or local open-weights models (Ollama/vLLM)—can drive the subagent briefings.
+3. **Universal Loop Design:** The state machine is designed to transcribe directly into a standalone TypeScript or Python agent loop (`while state.phase !== 'done'`).
+   <details>
+   <summary><b>View Universal Loop Implementation (TypeScript / Python)</b></summary>
+
+   ```typescript
+   // Standalone TypeScript/Python loop over disk-persisted state
+   while (state.phase !== 'done' && state.phase !== 'escalated') {
+     const subagent = getSubagentForPhase(state.phase);
+     await subagent.execute(state);
+     
+     // Gate verdicts decide transition — zero model self-grading:
+     state = await reloadStateFromDisk(stateDir);
+   }
+   ```
+   </details>
+
+---
 
 ## Install
 
@@ -48,6 +176,8 @@ Your config is at `~/.claude/autopilot/config.json`, created on first start. (`A
 | `jq` **or** `python3` | Optional. Only needed to read `state_root` / `workspace_root` out of your config when the value isn't a plain one-line string. With neither installed and such a value set, the scripts stop rather than silently write gate output somewhere the pipeline won't read it. |
 
 `preflight` checks the first four before anything else runs and tells you exactly what will be skipped, so a missing tool surfaces up front rather than three stages in.
+
+**Cross-Platform Support:** Runs natively on macOS and Linux (via `/bin/bash`). On Windows, runs through Git Bash (bundled with Git for Windows) or WSL. While distributed as a 1-click plugin for Claude Code, the state protocol and shell gates are model-agnostic and can be orchestrated by any frontier model or autonomous agent framework.
 
 ## Use it
 
@@ -109,6 +239,13 @@ The session output is deliberately thin — one line per stage and a summary blo
 ## Releasing
 
 The version appears in **two** files and both must be bumped together — `.claude-plugin/plugin.json` and the plugin's entry in `.claude-plugin/marketplace.json`. Bump one and the marketplace advertises a version that differs from what installs.
+
+## Documentation & Community
+
+* [System Architecture Specification (RFC-001)](docs/SPECIFICATION.md) — State machine mathematical formalism, data protocols, quality gate contracts, and convergence proofs.
+* [Security Policy & Trust Model](SECURITY.md) — Agent workspace sandboxing, permission quarantining, and deterministic guardrail layers.
+* [Contributor Guide](CONTRIBUTING.md) — Local development setup, stack extensibility walkthrough, and subagent prompt standards.
+* [Changelog](CHANGELOG.md) — Release notes and version history.
 
 ## Citation & Attribution
 
