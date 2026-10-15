@@ -11,6 +11,7 @@
 # Sourced, not executed.
 
 AUTOPILOT_HOME="${AUTOPILOT_HOME:-$HOME/.claude/autopilot}"
+AUTOPILOT_HOME="$(printf '%s' "$AUTOPILOT_HOME" | tr '\\' '/')"
 
 _expand_tilde() { printf '%s' "${1/#\~/$HOME}"; }
 
@@ -81,6 +82,7 @@ resolve_state_root() {
   local root="${AUTOPILOT_STATE_DIR:-}"
   [ -n "$root" ] || root="$(_config_value state_root)"
   [ -n "$root" ] || root="$AUTOPILOT_HOME/state"
+  root="$(printf '%s' "$root" | tr '\\' '/')"
   _expand_tilde "$root"
 }
 
@@ -88,6 +90,7 @@ resolve_workspace_root() {
   local root="${AUTOPILOT_WORKSPACE_DIR:-}"
   [ -n "$root" ] || root="$(_config_value workspace_root)"
   [ -n "$root" ] || root="$AUTOPILOT_HOME/work"
+  root="$(printf '%s' "$root" | tr '\\' '/')"
   _expand_tilde "$root"
 }
 

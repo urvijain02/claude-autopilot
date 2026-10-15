@@ -1,6 +1,6 @@
 ---
 name: engage
-description: Takes a Jira ticket through to open PRs unattended, as an explicit state machine — failing tests written first, shell-script gates the model cannot argue past, and an independent review-and-fix loop. Use when the user says "autopilot <TICKET>", "engage autopilot on <TICKET>", or "run autopilot on <TICKET>". NOT for supervised, step-by-step work on a ticket, and not for reviewing or planning a ticket without changing code. The user provides the starting repo link; the pipeline clones it, and expands to connected repos if analysis needs them. Re-running on a ticket already underway resumes it from state.json rather than starting over. The main session (the brain) delegates each stage to subagents and owns the review->fix loop. Multi-repo; no local clone required.
+description: Takes a Jira ticket through to open PRs unattended, as an explicit state machine — failing tests written first, shell-script gates the model cannot argue past, and an independent review-and-fix loop. Use when the user says "autopilot <TICKET>", "engage autopilot on <TICKET>", or "run autopilot on <TICKET>". Scoped to one active ticket pipeline per session; prompts for user confirmation before proceeding if prior ticket context is detected to prevent context contamination. NOT for supervised, step-by-step work on a ticket, and not for reviewing or planning a ticket without changing code. The user provides the starting repo link; the pipeline clones it, and expands to connected repos if analysis needs them. Re-running on a ticket already underway resumes it from state.json rather than starting over. The main session (the brain) delegates each stage to subagents and owns the review->fix loop. Multi-repo; no local clone required.
 ---
 
 # Autopilot — engage (the brain)
@@ -18,16 +18,27 @@ Do all your thinking silently and write reasoning/decisions/diagnosis to `log.md
 ## Invocation
 
 ```
-engage <TICKET>              resume if the ticket is already underway, otherwise start it
-engage <TICKET> --from <phase>   redo from a named phase (keeps everything before it)
-engage <TICKET> --restart    discard the run and start over — confirm first, it throws work away
-engage                       list every ticket whose phase isn't `done`, and stop
+engage <TICKET>                    resume if the ticket is already underway, otherwise start it
+engage <TICKET> --from <phase>     redo from a named phase (keeps everything before it)
+engage <TICKET> --restart          discard the run and start over — confirm first, it throws work away
+engage <TICKET> --prompt "<text>"  start with requirement provided as inline prompt text (zero Jira dependency)
+engage <TICKET> --file <path>      start with requirement loaded from a markdown file (zero Jira dependency)
+engage DEMO                        1-click quickstart: runs PROJ-1001 benchmark on bundled examples/sandbox-repo
+engage                             list every ticket whose phase isn't `done`, and stop
 ```
 
 ## Setup
 
-0. **Preflight (preflight skill).** Before anything else, check the required tools (gh auth, git, Atlassian MCP, Slack MCP). If something's missing, tell the user what will fail/skip and get an explicit go-ahead before starting. Record which optional integrations are unavailable so later steps skip them cleanly.
-1. No `<TICKET>` given → list the parked tickets (see Resuming) and stop. Otherwise take the ticket.
+0. **Preflight (preflight skill).** Before anything else, check the required tools (gh auth, git, Atlassian MCP, Slack MCP). If something's missing, tell the user what will fail/skip and get an explicit go-ahead before starting. When running in `DEMO` mode or with `--prompt` / `--file`, Jira and GitHub remote requirements are automatically satisfied locally. Record which optional integrations are unavailable so later steps skip them cleanly.
+0.5. **Session Isolation Invariant (Single-Ticket Scope).** You manage strictly ONE active ticket pipeline per Claude conversation session to prevent context contamination and token waste. If conversation history indicates that a previous ticket was already executed or discussed in this session, pause and prompt the user before proceeding:
+   > ⚠️ **Context Notice:** A previous ticket run was detected in this conversation session. Running multiple tickets in the same session causes context contamination and higher token spend.
+   > 
+   > Recommended: Run `/clear` to start with a pristine context window.
+   > 
+   > Proceed with `<TICKET>` in this session anyway? (y/N)
+   
+   Wait for explicit user confirmation. If the user declines or requests a reset, stop execution so they can run `/clear`. Never cross-contaminate state, ASTs, or workspaces between tickets.
+1. No `<TICKET>` given → if invoked as `DEMO`, set `<TICKET> = "PROJ-1001"`, `--file = "${CLAUDE_PLUGIN_ROOT}/examples/sample-ticket-proj-1001.md"`, and use the primary repo `${CLAUDE_PLUGIN_ROOT}/examples/sandbox-repo`. Otherwise list the parked tickets (see Resuming) and stop.
 2. **Read `$STATE/state.json` before you write anything.** Get `$STATE` from `${CLAUDE_PLUGIN_ROOT}/bin/state-dir.sh <TICKET>` — never work it out from config yourself, or you become a second implementation that can disagree with the gate scripts about where verdicts live. What you find decides where you start (see **Resuming**); only when there is no `state.json` do you create one — `phase: "jira-start"`, `iteration: 0`, `max_iterations: 3`, `repos: []` — along with the `log.md` header line (`# <TICKET> — <summary> · pipeline log`).
 3. **Jira start (ticket-updates skill).** Assign the ticket to the runner (dynamic `currentUser`) and move it to the project's in-progress status, resolved by that skill. Record `jira_status` in `state.json`. Skip (logged) if the Atlassian MCP is unavailable. Set `phase = "provision"`.
 4. **Provision the primary repo (provision-repo skill):** ask the user for the repo link, clone it, record it in `state.json.repos[]` as `role: "primary"`.

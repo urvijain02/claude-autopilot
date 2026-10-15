@@ -55,7 +55,17 @@ else
     echo "removing half-provisioned workspace (no .git): $dest" >&2; rm -rf "$dest"
   fi
   mkdir -p "$(dirname "$dest")"
-  if [[ "$remote" == *://* || "$remote" == git@* ]]; then
+  if [ -d "$remote" ]; then
+    echo "provisioning local template/repo $remote -> $dest" >&2
+    if [ -e "$remote/.git" ]; then
+      git clone "$remote" "$dest" >&2
+    else
+      cp -r "$remote/." "$dest"
+      git -C "$dest" init -b "${base:-main}" >&2
+      git -C "$dest" add . >&2
+      git -C "$dest" -c user.name="Claude Autopilot Sandbox" -c user.email="autopilot@local" commit -m "chore: initial sandbox baseline" >&2
+    fi
+  elif [[ "$remote" == *://* || "$remote" == git@* ]]; then
     echo "cloning (git) $remote -> $dest" >&2; git clone "$remote" "$dest" >&2
   else
     # A bare owner/repo carries no host, and both routes below assume GitHub. Say so on

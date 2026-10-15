@@ -14,8 +14,8 @@ parse_args "$@"
 # match only lets a gate pass, a false miss would reject real work.
 touched_a_test() {
   local paths
-  paths="$(git -C "$REPO" status --porcelain 2>/dev/null | sed 's/^...//' || true)"
-  printf '%s' "$paths" | grep -qiE 'test|spec'
+  paths="$(git -C "$REPO" status --porcelain -uall 2>/dev/null | sed 's/^...//' || true)"
+  printf '%s' "$paths" | grep -qiE '(^|[._/-])(tests?|specs?|__tests__)([._/-]|$)|[a-z0-9_]Tests?\.(cs|fs|vb|java)$'
 }
 
 stack="$(detect)"

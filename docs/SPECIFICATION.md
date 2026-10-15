@@ -218,7 +218,7 @@ All software verification is anchored by shell scripts residing in `bin/`. Subag
 | Gate Script | Flag / Mode | Required Exit Code | Behavioral Invariant |
 |---|---|---|---|
 | `gate-build.sh` | Default | `0` | Compiler/transpiler must complete with zero errors. Warnings treated per project settings. |
-| `gate-tests.sh` | `--expect-fail` | `0` (Under inverted logic) | Must return 0 **only if** test suite fails **AND** `git diff` proves newly authored test files were touched. Prevents vacuous test passes. |
+| `gate-tests.sh` | `--expect-fail` | `0` (Under inverted logic) | Must return 0 **only if** test suite fails **AND** `git status --porcelain -uall` proves newly authored test files were touched (with `-uall` traversing untracked directories). Prevents vacuous test passes. |
 | `gate-tests.sh` | Default | `0` | Full existing test suite plus new tests must pass completely (`100% green`). |
 | `ensure-dotnet-restore.sh` | Automated fallback | `0` | Recovers from private NuGet/npm 401 feed failures using local machine package caches. If unrecoverable, exits with code `3` (`blocked`) to escalate to human. |
 
@@ -285,3 +285,25 @@ To avoid unbounded token expenditure or runaway agent behavior, the pipeline gua
 
 * **Durable vs. Disposable Separation:** No pipeline artifact is ever committed into the application source tree. The repo only contains authentic code and test diffs.
 * **OS Independence:** Runs on POSIX Bash (native on macOS and Linux; via Git Bash or WSL2 on Windows).
+
+---
+
+## 8. Concurrency, Session Isolation & Resumption Guarantees
+
+To ensure deterministic agent behavior and prevent state corruption across multi-ticket workflows, the pipeline enforces a three-tiered concurrency contract:
+
+### 8.1 Single-Ticket Conversation Session Scope
+A single conversation session is scoped to host one active ticket pipeline from intake to completion.
+* **Context Bleed Prevention:** Sequential execution of multiple tickets within the same conversation window accumulates token bloat and risks cross-ticket AST hallucination.
+* **Intake Guardrail:** If an orchestrator detects conversational history from a prior ticket run, it must pause and present a user confirmation prompt before continuing, advising the developer to reset context via `/clear` or open a fresh terminal.
+* **Multi-Repo Coexistence:** A single ticket run may span multiple provisioned repositories (e.g. backend service, frontend client). The orchestrator coordinates all affected repositories within this single session, fanning out subagents per repository while maintaining isolation from previous tickets.
+
+### 8.2 Multi-Terminal Cross-Ticket Parallelism
+Distinct tickets (e.g., `PROJ-1001` and `PROJ-1002`) are **fully isolated by filesystem hierarchy**:
+* Durable state is strictly partitioned under `$STATE/<TICKET>/`.
+* Disposable Git workspaces are strictly partitioned under `$WORKSPACE/<TICKET>/repos/`.
+* Separate tickets may run concurrently across independent terminal windows without locks or race conditions.
+
+### 8.3 Same-Ticket Mutual Exclusion & Resumption
+Concurrent execution of the **same ticket key** across multiple active sessions is undefined and prohibited. Sequential re-runs of the same ticket key act as an **idempotent pipeline resumption**, picking up execution directly from the phase recorded in `$STATE/<TICKET>/state.json`.
+

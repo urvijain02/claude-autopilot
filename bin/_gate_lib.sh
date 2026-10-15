@@ -45,6 +45,7 @@ gates_dir() { echo "${STATE_ROOT}/${TICKET}/gates/${LABEL}"; }
 detect() { "${here}/detect-stack.sh" "$REPO"; }
 
 # Subshell, so the cd cannot leak back to the caller and shift its relative paths.
+# Callers must ensure any interpolated directory paths or flags are validated via _safe_path.
 run_in_repo() { ( cd "$REPO" && eval "$1" ); }
 
 # The verdict is the one thing downstream stages are required to trust, so a repo

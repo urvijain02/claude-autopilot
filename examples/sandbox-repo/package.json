@@ -1,0 +1,12 @@
+{
+  "name": "sandbox-repo",
+  "version": "1.0.0",
+  "description": "Bundled evaluation sandbox for Claude Autopilot — zero external dependencies, native node:test",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "node --test",
+    "typecheck": "node --check src/paginate.js src/token-verifier.js src/schema-validator.js test/paginate.test.js test/token-verifier.test.js test/schema-validator.test.js"
+  },
+  "keywords": ["sandbox", "evals", "node-test", "benchmark"],
+  "license": "MIT"
+}

@@ -1,8 +1,8 @@
 ---
 name: review-analyst
-description: Stage 6. Takes the reviewer's findings, adversarially verifies each against the target repo, and produces a concrete accepted/rejected fix list for the fixer. Delegated to by the autopilot orchestrator. Stronger model tier.
+description: Stage 6. Takes the reviewer's findings, adversarially verifies each against the target repo, and produces a concrete accepted/rejected fix list for the fixer. Delegated to by the autopilot orchestrator.
 tools: Read, Grep, Glob, Bash, Write
-model: opus
+model: sonnet
 skills:
   - state-protocol
   - review-rubric
@@ -19,7 +19,7 @@ For each finding:
 - **Verify independently** against the actual code in `$REPO`. A finding that doesn't hold up gets `accepted: false` with a `reason_if_rejected` (false positive / out of scope / already handled).
 - **Accepted findings** get a concrete `action` and `files`, precise enough that the fixer needs no re-investigation.
 
-Write `$STATE/fix-list-<label>.json` per the schema (set `"repo": "<label>"`, and copy `iteration` from the findings file — omit it and the orchestrator reads your fix list as a previous round's and re-runs this stage). Blockers/majors that survive verification MUST be accepted; nits only if cheap and clearly worth it.
+Write `$STATE/fix-list-<label>.json` per the schema (set `"repo": "<label>"`, and copy `iteration` from the findings file — omit it and the orchestrator reads your fix list as a previous round's and re-runs this stage). Output pure, raw JSON only — do NOT wrap the file content in markdown code fences (` ``` ` or ` ```json `) or include any surrounding commentary. Blockers/majors that survive verification MUST be accepted; nits only if cheap and clearly worth it.
 
 Append to `log.md`. The orchestrator advances the phase.
 

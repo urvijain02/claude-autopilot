@@ -79,6 +79,7 @@ $STATE/                         (~/.claude/autopilot/state/<TICKET>/)
 
 - **Read before you act** — load the `$STATE` files your stage depends on.
 - **All pipeline outputs go under `$STATE`**, never inside `$REPO`. Code changes go in `$REPO` (via git); pipeline artifacts do not.
+- **All JSON files under `$STATE` (`state.json`, `review-findings-*.json`, `fix-list-*.json`) must be valid, raw JSON only** — never wrap file contents in markdown code fences (` ``` ` or ` ```json `), and never include surrounding prose. When updating `state.json`, preserve valid JSON syntax.
 - **Never write gate verdicts by hand.** `$STATE/gates/*.json` are written *only* by the gate scripts. Read them; don't author them.
 - **A findings or fix-list file is only valid for its own round.** Both carry `iteration`. Before routing on a verdict, or handing a fix list to the fixer, check it equals `state.json.iteration`. A lower number, or no `iteration` at all, means the file is left over from an earlier round — the loop was interrupted mid-fan-out — so re-run that stage for that repo instead of acting on it. **Re-run it once only:** if the regenerated file still doesn't carry the current `iteration`, stop and escalate. A writer that won't set the field would otherwise spin this loop forever.
 - **`repos[].gates` is a copy, not the verdict.** The gate script's JSON under `$STATE/gates/<label>/` is authoritative. If it's gone, re-run the gate rather than trusting the copy — a resumed run must not inherit a `pass` nobody can read.

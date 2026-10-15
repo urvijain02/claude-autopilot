@@ -32,4 +32,4 @@ Classification:
 
 Also record the repo's test framework/runner and any new fixtures the writer needs.
 
-Update `state.json.phase = "write-tests"`; append to `log.md`.
+Update `state.json.phase = "branch"`; append to `log.md`.

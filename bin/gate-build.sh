@@ -53,6 +53,7 @@ node_build_cmd() {
     ' "$repo" 2>/dev/null
   )
   for rel in "${dirs[@]}"; do
+    _safe_path "workspace directory" "$rel" || continue
     if n="$(_pkg_script "$repo/$rel/package.json" "${names[@]}")"; then
       cmds+=("npm run $n --prefix '$rel'")
     fi

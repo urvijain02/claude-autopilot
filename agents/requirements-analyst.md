@@ -14,7 +14,12 @@ Follow the state-protocol skill: read/write the central `$STATE` dir; explore co
 
 ## Do
 
-1. Read the ticket (from the prompt, or fetch it if a ticket source is available).
+1. Read the ticket:
+   - If provided via `--prompt "<text>"`, use the prompt string directly.
+   - If provided via `--file <path>`, read the specified markdown file from disk.
+   - If running in `DEMO` mode, read `${CLAUDE_PLUGIN_ROOT}/examples/sample-ticket-proj-1001.md`.
+   - If Atlassian Jira MCP is connected, fetch the ticket details from Jira.
+   - If none is provided, request the requirement from the user.
 2. Explore `$REPO` read-only, **surgically** (see Token budget below): `glob`/`grep` to *locate* the code the ticket names, then read only the specific files/sections that matter — enough to ground the requirement (which modules/files are implicated, current behavior, what "done" means). Do not survey the whole repo.
 3. Write `$STATE/requirements.md`:
    - **Goal** — one paragraph.

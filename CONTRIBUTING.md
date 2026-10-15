@@ -8,16 +8,18 @@ Thank you for your interest in contributing to **Claude Autopilot**! We welcome 
 
 Before contributing, please review the core architectural blueprints:
 * **[System Architecture Specification (RFC-001)](docs/SPECIFICATION.md):** Formal state machine transitions, JSON data schemas, deterministic gate contracts, and convergence proofs.
+* **[Evaluation Protocol & Benchmarks (RFC-002)](docs/EVALS.md):** Evaluation methodology, metrics (Pass@1, Pass@3, ARR, cost formulas), and the 3 Golden Benchmark tasks.
 * **[Security Policy & Trust Model](SECURITY.md):** Workspace sandboxing, permission quarantining, and credential handling invariants.
 
-The repository is organized into four modular layers:
+The repository is organized into five modular layers:
 
 ```
 claude-autopilot/
 ├── agents/             # Subagent prompt specifications and operational personas
-├── bin/                # Deterministic POSIX Bash shell scripts and quality gates
+├── bin/                # Deterministic POSIX Bash shell scripts, evaluation runner, and quality gates
 ├── skills/             # Reusable workflow procedures, schemas, and rubrics
 ├── hooks/              # Plugin lifecycle hooks (configuration bootstrapping)
+├── examples/           # Bundled evaluation sandbox repositories and golden benchmark tasks
 └── docs/               # System architecture specifications and RFC documents
 ```
 
@@ -53,6 +55,9 @@ claude-autopilot/
    export AUTOPILOT_HOME="$HOME/.autopilot-dev"
    ```
 
+### Shell Permission Prompts in Claude Code
+The quality gate and provisioning scripts run through **POSIX Bash** (native on macOS/Linux; via Git Bash or WSL on Windows). The first time each script is executed by Claude Code in your local environment, you may receive a permission prompt showing its absolute path. Choosing the "always allow" option persists the permission in your local environment for future runs.
+
 ---
 
 ## 3. Extending Language Support for Target Repositories (e.g. Rust, Go, Python)
@@ -64,35 +69,27 @@ Adding support for a new target repository language or build system requires upd
 ### Step 1: Detect the Project Stack
 In `bin/detect-stack.sh`, add a detection clause matching the project root manifest:
 ```bash
-if [ -f "$REPO_PATH/Cargo.toml" ]; then
+elif [ -f "$repo/Cargo.toml" ]; then
   echo "rust"
-  exit 0
-fi
 ```
 
-### Step 2: Implement Build Verification
-In `bin/gate-build.sh`, implement the compilation and syntax check command:
+### Step 2: Implement Build Verification Command
+In `bin/gate-build.sh`, assign the compilation or typecheck command to the `$cmd` variable:
 ```bash
 case "$stack" in
-  rust)
-    cargo check --tests ;;
+  rust) cmd="cargo check --tests" ;;
 esac
 ```
 
-### Step 3: Implement Test Verification & TDD Red Gate
-In `bin/gate-tests.sh`, implement test execution and the inverted `--expect-fail` red-test verification:
+### Step 3: Implement Test Verification Command
+In `bin/gate-tests.sh`, assign the test runner command to the `$cmd` variable:
 ```bash
 case "$stack" in
-  rust)
-    if [ "$EXPECT_FAIL" = "true" ]; then
-      # Expect failure: command must exit non-zero
-      cargo test && exit 1 || exit 0
-    else
-      cargo test
-    fi
-    ;;
+  rust) cmd="cargo test" ;;
 esac
 ```
+
+> **Note on Gate Automation:** Do not implement manual exit-code inversion. The central `bin/gate-tests.sh` harness automatically handles `--expect-fail` TDD verification, `touched_a_test` git status checks, log capture, and central JSON verdict generation.
 
 ---
 
@@ -132,5 +129,9 @@ The plugin version appears in **two** files and both must be updated together wh
    ```bash
    bash -n bin/*.sh
    ```
-3. Commit with a concise summary and structured bullet points.
-4. Push and open a pull request against `main`. All PRs are reviewed for architectural consistency, gate determinism, and license compliance.
+3. Run the evaluation benchmark harness to verify gate determinism and prevent regressions:
+   ```bash
+   ./bin/run-evals.sh
+   ```
+4. Commit with a concise summary and structured Conventional Commit bullet points.
+5. Push and open a pull request against `main`. All PRs are reviewed for architectural consistency, gate determinism, and license compliance.

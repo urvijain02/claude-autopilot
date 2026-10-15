@@ -1,0 +1,12 @@
+{
+  "name": "sandbox-client",
+  "version": "1.0.0",
+  "description": "Consumer client library for sandbox-repo microservice event envelopes",
+  "main": "src/client.js",
+  "scripts": {
+    "test": "node --test",
+    "typecheck": "node --check src/client.js test/client.test.js"
+  },
+  "keywords": ["sandbox", "evals", "client"],
+  "license": "MIT"
+}

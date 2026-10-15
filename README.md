@@ -13,6 +13,42 @@ It works across several repos in one run, clones what it needs into a throwaway 
 
 ---
 
+## ⚡ Quickstart: Dual-Tier Evaluation Harness (Zero Setup)
+
+You can evaluate the pipeline and deterministic quality gates locally without external Jira credentials or third-party repositories:
+
+### Tier 1: Offline Gate & Invariant Harness Verification (< 5 Seconds)
+
+Runs offline with zero external dependencies to verify that the target repository unit tests, POSIX quality gates (`gate-build.sh`, `gate-tests.sh`), and central state logging are fully operational:
+
+```bash
+# Clone the repository
+git clone https://github.com/urvijain02/claude-autopilot.git
+cd claude-autopilot
+
+# Run the deterministic evaluation benchmark harness:
+./bin/run-evals.sh
+```
+
+### Tier 2: Live Autonomous Agent Evaluation
+
+Stage a benchmark task in its initial broken state, then launch Claude Autopilot to watch the agent autonomously write the failing test (Red Gate), implement the fix (Green Gate), and complete the review loop:
+
+```bash
+# 1. Stage the broken defect (e.g. PROJ-1001 boundary slicing bug):
+./bin/reset-sandbox.sh PROJ-1001
+
+# 2. In your Claude Code session, launch the autonomous pipeline:
+/autopilot:engage PROJ-1001 --file examples/sample-ticket-proj-1001.md
+
+# 3. Restore all sandboxes to clean reference state when finished:
+./bin/reset-sandbox.sh clean
+```
+
+> **What this executes:** Benchmarks the 3 Golden Benchmark tasks (`PROJ-1001` boundary slicing, `PROJ-1002` auth token clock-skew invariant, and `PROJ-1003` multi-repo contract coordination) against bundled sandboxes using native `node:test`, executing real `gate-build.sh` and `gate-tests.sh` quality gates and asserting un-fakeable central JSON verdicts. See [RFC-002: Evaluation Protocol](docs/EVALS.md).
+
+---
+
 ## Architecture & State Machine
 
 The pipeline operates as an explicit finite-state machine backed by disk-persisted state (`$STATE/state.json`), ensuring crash resilience and resumability. For formal JSON schemas, convergence guarantees, and quality gate contracts, see the [System Architecture Specification (RFC-001)](docs/SPECIFICATION.md).
@@ -92,6 +128,8 @@ flowchart LR
     Reviewer -.-> Schema["review-findings.json\n(Write-Only Permissions)"]
 ```
 
+* **Context Boundaries & Multi-Repo Coexistence:** The orchestrator runs in your primary Claude Code session, managing the state machine across all connected repositories for that ticket. When stages fan out (`*`), subagents are launched in clean, isolated contexts per repository. Between different ticket runs, running `/clear` resets the primary conversation to maintain clean context hygiene.
+
 ---
 
 ## 🛠️ Supported Target Languages & Tech Stacks
@@ -146,25 +184,6 @@ Claude Autopilot is designed to write code and verify tests across any programmi
 
 Restart Claude Code afterwards. On the next start, `~/.claude/autopilot/config.json` is created for you from the shipped template.
 
-## Set up
-
-**Nothing is strictly required** — the pipeline runs with the config exactly as shipped. The one value worth setting first is `slack_channel`: without it the PR-link post is skipped and logged rather than sent somewhere arbitrary.
-
-Your config is at `~/.claude/autopilot/config.json`, created on first start. (`AUTOPILOT_HOME` moves it — see [Where things live](#where-things-live).)
-
-| Key | Ships as | What it does |
-|---|---|---|
-| `slack_channel` | *empty* | Channel id (`C0…`) the PR links get posted to. Empty means the post is skipped and logged. |
-| `jira_site` | *empty* | Optional. Host for Atlassian Cloud (e.g. `your-team.atlassian.net`). If empty, Jira transitions skip and prompt-mode applies. |
-| `human_gates` | `false` | `true` pauses for plan approval and pre-commit sign-off. No effect on the quality gates — see *Two kinds of gate*. |
-| `cleanup_after_pr` | `false` | `true` deletes a ticket's clones once its PRs are open. A run's output under `state_root` is kept either way. |
-| `default_base_branch` | `main` | Base branch to branch from when the ticket doesn't imply one. |
-| `state_root` | `~/.claude/autopilot/state` | Where a run's durable output lands. Point it somewhere browsable if you'd rather read runs outside `~/.claude`. A value containing a quote or backslash needs `jq` or `python3` — see *Requirements*. |
-| `workspace_root` | `~/.claude/autopilot/work` | Where the throwaway clones go. Move it if the repos you work on are large. |
-| `orgs` | `[]` | Optional. GitHub orgs or username searched to resolve a connected repo that analysis names. Empty means you're always asked for the link. Bare `owner/repo` is GitHub-only; Bitbucket needs a full URL. |
-| `auto_expand_connected` | `false` | `true` clones connected repos without confirming each one first. |
-| `jira_transitions` | `{}` | Fills itself in. The first time a project's in-progress or in-review status can't be matched automatically you're asked once, and the answer is cached per project key. |
-
 ## Requirements
 
 | Need | Missing means |
@@ -181,7 +200,7 @@ Your config is at `~/.claude/autopilot/config.json`, created on first start. (`A
 
 ## Use it
 
-```
+```bash
 /autopilot:engage PROJ-123
 ```
 
@@ -189,16 +208,19 @@ It also answers to plain requests — "run autopilot on PROJ-123", "engage autop
 
 Re-running on a ticket already underway **resumes** it from `state.json` rather than starting over:
 
-```
+```text
 /autopilot:engage PROJ-123                  resume, or start if it's new
 /autopilot:engage PROJ-123 --from review    redo from a named phase
 /autopilot:engage PROJ-123 --restart        start over (asks first; archives the old run)
-/autopilot:engage                          list every run that isn't finished
+/autopilot:engage PROJ-123 --prompt "..."   run from inline prompt string (zero Jira dependency)
+/autopilot:engage PROJ-123 --file <path>    run from local markdown file (zero Jira dependency)
+/autopilot:engage DEMO                      1-click quickstart: runs PROJ-1001 on bundled sandbox repo
+/autopilot:engage                           list every run that isn't finished
 ```
 
 One invocation carries the ticket all the way to open PRs — it doesn't stop to ask you to approve anything. If the session dies partway, nothing is lost: state is on disk after every transition, so running the same command again picks up where it stopped.
 
-One ticket per run.
+> 💡 **Tip:** Run `/clear` between different tickets to start with a fresh conversation context.
 
 ### Two kinds of gate, don't confuse them
 
@@ -207,16 +229,40 @@ One ticket per run.
 - **Quality gates** — tests and build, run by shell scripts that write `pass`/`fail` to disk. The orchestrator has to read those files before it advances. Always on, not configurable, and the reason the run can be trusted without you watching it.
 - **Human gates** — the pauses for you to approve a plan or sign off before commit. Off by default. Set `human_gates: true` in your config if you'd rather it stop and wait at those points.
 
-## Where things live
+## Configuration & Workspace Management
 
-| | |
+**Nothing is strictly required** — the pipeline runs out-of-the-box with zero configuration needed.
+
+<details>
+<summary><b>⚙️ View Advanced Settings & Workspace Relocation</b></summary>
+
+### Configuration Options (`~/.claude/autopilot/config.json`)
+
+The config file is created automatically on first run.
+
+| Key | Ships as | What it does |
+|---|---|---|
+| `slack_channel` | *empty* | Channel id (`C0…`) the PR links get posted to. Empty means the post is skipped and logged. |
+| `jira_site` | *empty* | Optional. Host for Atlassian Cloud (e.g. `your-team.atlassian.net`). If empty, Jira transitions skip and prompt-mode applies. |
+| `human_gates` | `false` | `true` pauses for plan approval and pre-commit sign-off. No effect on the quality gates — see *Two kinds of gate*. |
+| `cleanup_after_pr` | `false` | `true` deletes a ticket's clones once its PRs are open. A run's output under `state_root` is kept either way. |
+| `default_base_branch` | `main` | Base branch to branch from when the ticket doesn't imply one. |
+| `state_root` | `~/.claude/autopilot/state` | Where a run's durable output lands. Point it somewhere browsable if you'd rather read runs outside `~/.claude`. A value containing a quote or backslash needs `jq` or `python3` — see *Requirements*. |
+| `workspace_root` | `~/.claude/autopilot/work` | Where the throwaway clones go. Move it if the repos you work on are large. |
+| `orgs` | `[]` | Optional. GitHub orgs or username searched to resolve a connected repo that analysis names. Empty means you're always asked for the link. Bare `owner/repo` is GitHub-only; Bitbucket needs a full URL. |
+| `auto_expand_connected` | `false` | `true` clones connected repos without confirming each one first. |
+| `jira_transitions` | `{}` | Fills itself in. The first time a project's in-progress or in-review status can't be matched automatically you're asked once, and the answer is cached per project key. |
+
+### Where Things Live
+
+| Path | Description |
 |---|---|
 | The plugin's own scripts | inside the installed plugin — you never need this path |
 | `~/.claude/autopilot/config.json` | your settings |
 | `~/.claude/autopilot/state/<TICKET>/` | a run's output: spec, test plan, findings, gate verdicts, `log.md` |
 | `~/.claude/autopilot/work/<TICKET>/repos/` | the throwaway clones |
 
-Those paths are defaults. `state_root` and `workspace_root` in your config move the last two, and the `AUTOPILOT_HOME` environment variable moves all of it at once — it's the anchor the rest hang off, resolved in one place (`bin/_paths.sh`). Everything under it is yours and survives plugin updates. No pipeline artifact is ever written into a repo: the spec, plan, findings, gate verdicts and `log.md` all live under `state_root`. The clone itself does accumulate ordinary build output — `obj/`, `bin/`, `node_modules/` — because the gates run real build and test commands inside it. That's the reason the clone is disposable and the state dir isn't.
+Those paths are defaults. `state_root` and `workspace_root` in your config move the last two, and the `AUTOPILOT_HOME` environment variable moves all of it at once — it's the anchor the rest hang off, resolved in one place (`bin/_paths.sh`).
 
 To relocate the root workspace and config:
 
@@ -225,24 +271,19 @@ To relocate the root workspace and config:
 export AUTOPILOT_HOME="$HOME/.custom-autopilot"
 
 # Windows (in PowerShell profile or Environment Variables)
-$env:AUTOPILOT_HOME = "D:\autopilot"
+$env:AUTOPILOT_HOME = "D:/autopilot"
 ```
 
-## Permission prompts
-
-The gate and provision scripts run through **POSIX Bash** (native on macOS/Linux; via Git Bash or WSL on Windows), so the first time each one is used you'll get a permission prompt showing its full path. Choosing the always-allow option persists it, and after the first run you won't see them again. If you'd rather pre-approve them, copy the paths out of those prompts into your own settings — they're stable for an installed version.
+</details>
 
 ## Reading a run
 
 The session output is deliberately thin — one line per stage and a summary block at the end. Everything else is on disk under `state_root/<TICKET>/`: `requirements.md`, `test-plan.md`, `review-findings-*.json`, `fix-list-*.json`, the gate verdicts under `gates/`, and `log.md`, which carries every decision the run made along with why and what it rejected.
 
-## Releasing
-
-The version appears in **two** files and both must be bumped together — `.claude-plugin/plugin.json` and the plugin's entry in `.claude-plugin/marketplace.json`. Bump one and the marketplace advertises a version that differs from what installs.
-
 ## Documentation & Community
 
 * [System Architecture Specification (RFC-001)](docs/SPECIFICATION.md) — State machine mathematical formalism, data protocols, quality gate contracts, and convergence proofs.
+* [Evaluation Protocol & Benchmarks (RFC-002)](docs/EVALS.md) — Quantitative evaluation methodology, Pass@1 / Pass@3 metrics, and the 3 Golden Benchmark tasks.
 * [Security Policy & Trust Model](SECURITY.md) — Agent workspace sandboxing, permission quarantining, and deterministic guardrail layers.
 * [Contributor Guide](CONTRIBUTING.md) — Local development setup, stack extensibility walkthrough, and subagent prompt standards.
 * [Changelog](CHANGELOG.md) — Release notes and version history.
