@@ -47,3 +47,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * **Agent State Machine & Model Alignment:** Standardized `agents/review-analyst.md` to Sonnet model tier and aligned `agents/test-planner.md` state machine phase transition to `"branch"`.
 * **Session Context Isolation Guardrail:** Enforced single-ticket conversation scope in `skills/engage/SKILL.md` with prompt-and-pause user confirmation if prior ticket context is detected, and formalized the three-tier concurrency/resumption model in RFC-001 Section 8.
 
+---
+
+### Phase 4: AI Telemetry & Token Economics
+
+#### Added
+* **Deterministic AI Telemetry Engine (`bin/record-telemetry.sh`):** Standalone, zero-overhead telemetry recording engine computing phase and stage latencies from `.marks` timestamps, calculating prompt cache efficiency %, and atomically updating `$STATE/<TICKET>/telemetry.json` with zero LLM API token overhead.
+* **Formal Telemetry State Contract (RFC-001 Section 3.4):** Decoupled `$STATE/<TICKET>/telemetry.json` schema contract covering model allocation, granular stage timings across 14 canonical stages, durable token ground truth, and macro-phase timing rollups (`plan_and_setup`, `tdd_and_gates`, `review_and_delivery`).
+* **Centralized Multi-Engine JSON Resolver:** Universal JSON parser resolution in `bin/_paths.sh` implementing strict `jq` → `python3` → `python` → `node` → `none` fallback precedence for zero-dependency CLI environments.
+* **High-Signal Presentation Layer:** Integrated `telemetry` (macro-phase breakdown) and `tokens` (prompt cache efficiency %) rows into orchestrator finish banners in `skills/reporting/SKILL.md` and `skills/engage/SKILL.md`.
+* **Structured Token Economics Audit Log:** Formatted `## AI Telemetry & Token Economics` markdown audit table automatically appended to `$STATE/<TICKET>/log.md` mapping macro phases to constituent pipeline stages.
+* **Mathematical Invariant Verifier:** Enhanced `bin/run-evals.sh` with `verify_telemetry_invariants()` asserting prompt cache hit rate mathematical precision and phase duration sum invariant ($T = \sum P_i$) across all golden benchmarks.
+
+#### Fixed & Hardened
+* **Windows Node.js Path & Binary Discovery:** Resolved cross-platform runtime disparities in `bin/gate-build.sh` and `bin/run-evals.sh` via `node.exe` fallback discovery and POSIX-to-Windows path normalization (`wslpath -m`), enabling deterministic gate and telemetry execution on Windows hosts.
+* **Token Invariant Schema Synchronization:** Synchronized Section 3.4 of `docs/SPECIFICATION.md` and `skills/state-protocol/SKILL.md` with column-aligned comments and exact 14 canonical stages mapping dictionary.
+
+

@@ -70,16 +70,25 @@ Transitions:
 9. **analyze** (fan out per repo with findings) → `review-analyst` → `$STATE/fix-list-<label>.json`.
 10. **fix** (fan out per affected repo) → `fixer` → applies that repo's accepted fixes; keeps its gates green.
 11. Increment `iteration`. `< max_iterations` → back to **review**. At the cap, decide by **severity**, not unconditionally:
-    - last combined verdict `BLOCKING` → **escalate** to a human with the unresolved findings.
+    - last combined verdict `BLOCKING` → **escalate** to a human with the unresolved findings:
+      1. Invoke `${CLAUDE_PLUGIN_ROOT}/bin/record-telemetry.sh <TICKET> [...]` to compile stage/phase durations and token metrics for the attempted run.
+      2. Print the escalation final block (see reporting skill) populated with `telemetry` and `tokens`.
+      3. Append the `## Summary` block and `## AI Telemetry & Token Economics` table to `log.md`.
+      4. Leave ticket status unchanged (do not move to In Review; no Slack post) and stop.
     - last combined verdict `NON_BLOCKING` → **commit**. Only `minor`/`nit` findings can survive that verdict, and withholding a PR over nits strands finished work for a human to rescue. Record the survivors as a `Decision:` block and carry them into the final block's `review` field.
 12. **commit** — ⏸ **when `config.human_gates` is true, stop here first:** show the per-repo `git diff --shortstat "<branch_base>"` and a count of new untracked files (nothing is committed until the committer runs, so a `...HEAD` diffstat would be empty) plus the combined review verdict, and wait for a go-ahead. This gate lives with you, not the committer: that subagent runs in a fresh context with no channel to the user, so a confirmation delegated to it has nobody to ask. Then (fan out per repo with changes) → `committer` → commits + pushes that repo's branch, opens its PR, records `pr_url` in `state.repos[]`. Cross-reference sibling PRs + the ticket in each body.
 13. **ticket-updates (ticket-updates skill)** — once, after all PRs are open:
     - move the ticket to the project's in-review status, resolved by that skill (record `jira_status`);
     - post the PR link(s) to the configured channel (`config.slack_channel`) in the required format (header + one URL per line, no @-mentions, don't start with the KEY); record `slack_link`. If it's unset, skip and log — don't guess a channel.
     Each sub-step skips (logged, surfaced in the final block) if its MCP is unavailable.
-14. **cleanup** — two parts. Only the first is conditional:
+14. **cleanup** — three parts. Only the first is conditional:
     - **Discarding the clones — only if `config.cleanup_after_pr`** (shipped default: `false`) → `${CLAUDE_PLUGIN_ROOT}/bin/cleanup-workspace.sh <TICKET>`. Central `$STATE` is kept either way.
-    - **Finalising — always, whether or not the above ran:** set `phase = "done"` and print the final block (see Output).
+    - **Telemetry calculation — always:** invoke the deterministic telemetry engine before finalizing output:
+      ```bash
+      "${CLAUDE_PLUGIN_ROOT}/bin/record-telemetry.sh" <TICKET> [--tokens-in <IN> --tokens-out <OUT> --tokens-cache-read <CR> --tokens-cache-creation <CC>]
+      ```
+      This computes macro-phase rollups (`plan_and_setup`, `tdd_and_gates`, `review_and_delivery`) and stage durations from phase marks, calculates prompt cache efficiency, and atomically generates `$STATE/telemetry.json`.
+    - **Finalising — always, whether or not the above ran:** set `phase = "done"`, read `$STATE/telemetry.json` to populate the `telemetry` and `tokens` rows, print the final block (see Output / reporting skill), and append both the `## Summary` block and `## AI Telemetry & Token Economics` table to `log.md`.
 
     Finalising is not optional and does not depend on `cleanup_after_pr`. Skip it and the ticket stays listed as parked forever, and the user never sees the summary of what the run did.
 
@@ -88,7 +97,7 @@ Transitions:
 Keep the session minimal and identical across runs: **one line per stage, then the final block, nothing else.** Do not echo file contents, diffs, specs, or findings into the chat — it's all in `$STATE`.
 
 - At each transition, get real elapsed: `${CLAUDE_PLUGIN_ROOT}/bin/mark-phase.sh <TICKET> <phase>` records the mark and prints the stage elapsed on stdout. It does not write to `log.md` — put what it printed into that phase's section header (`· HH:MM (+<elapsed>)`), which is the only place per-stage timing survives. Print the one-line status from the reporting skill.
-- At the end, print the fixed final block (status · total elapsed; per-repo line with `git diff --shortstat`; gates shown as pass/fail/**skipped** explicitly; review + iterations; **manual** checks as bullets pulled from `test-plan.md`, or `none`; PR URL(s); the `details` path). Exact shape is in the `reporting` skill.
+- At the end, print the fixed final block (status · total elapsed; per-repo line with `git diff --shortstat`; gates shown as pass/fail/**skipped** explicitly; review + iterations; `telemetry` phase timings; `tokens` with cache efficiency; **manual** checks as bullets pulled from `test-plan.md`, or `none`; PR URL(s); the `details` path). Exact shape is in the `reporting` skill.
 
 ### Logging (follow the `state-protocol` log format)
 
@@ -96,7 +105,7 @@ Keep the session minimal and identical across runs: **one line per stage, then t
 - Write the one-line header at run start.
 - Log your own **routing decisions as `Decision:` blocks** — verdict routing (CLEAN→commit / NON_BLOCKING→ship-or-fix / BLOCKING→analyze), skipping a step because an MCP is unavailable, escalating at the iteration cap, choosing connected repos to provision. Always with `Why:` and `Alternatives:`.
 - Open a `## Follow-up: <name> (<date>)` section for any work after `done`.
-- At the end, append the `## Summary` block (same content as the console final block).
+- At the end, append the `## Summary` block (same content as the console final block) and the `## AI Telemetry & Token Economics` table.
 
 ## Hard rules
 

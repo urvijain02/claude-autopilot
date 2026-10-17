@@ -18,15 +18,18 @@ Everything below hangs off one anchor: **`AUTOPILOT_HOME`**, default `~/.claude/
 
 ```
 $STATE/                         (~/.claude/autopilot/state/<TICKET>/)
-  state.json            # single source of truth for the state machine
-  requirements.md              # stage 1 (includes a "Connected repos" section)
-  test-plan.md                 # stage 2 (each behavior tagged with its repo)
-  review-findings-<label>.json # stage 5, one per repo (rewritten each round; carries its `iteration`)
-  fix-list-<label>.json        # stage 6, one per repo (same)
-  gates/<label>/               # per-repo, written ONLY by the gate scripts
-    tests.json  build.json  *.log
-  log.md                # append-only human trail
-  .marks                # phase timestamps, written ONLY by mark-phase.sh
+  state.json                    # single source of truth for the state machine
+  requirements.md               # stage 1 (includes a "Connected repos" section)
+  test-plan.md                  # stage 2 (each behavior tagged with its repo)
+  review-findings-<label>.json  # stage 5, one per repo (rewritten each round; carries its `iteration`)
+  fix-list-<label>.json         # stage 6, one per repo (same)
+  gates/<label>/                # per-repo quality gate verdicts & execution logs
+    tests.json                  # test runner exit verdict (pass | fail | skipped | blocked)
+    build.json                  # compiler/build exit verdict (pass | fail | skipped | blocked)
+    *.log                       # raw build and test runner console output
+  telemetry.json                # token economics & phase/stage timings, written ONLY by record-telemetry.sh
+  log.md                        # append-only human trail
+  .marks                        # phase timestamps, written ONLY by mark-phase.sh
 ```
 
 ## state.json schema
@@ -75,12 +78,57 @@ $STATE/                         (~/.claude/autopilot/state/<TICKET>/)
                "files": ["path"], "reason_if_rejected": "" } ] }
 ```
 
+## telemetry.json schema
+
+```json
+{
+  "ticket": "PROJ-1001",
+  "models": {
+    "analyst": "claude-sonnet",
+    "implementer": "claude-sonnet",
+    "reviewer": "claude-opus"
+  },
+  "tokens": {
+    "input": 124500,
+    "output": 14200,
+    "cache_read": 102000,
+    "cache_creation": 22500
+  },
+  "cache_hit_rate_percent": 81.9,
+  "duration_seconds": {
+    "total": 134,
+    "phases": {
+      "plan_and_setup": 20,
+      "tdd_and_gates": 52,
+      "review_and_delivery": 62
+    },
+    "stages": {
+      "preflight": 2,
+      "jira_start": 2,
+      "provision": 4,
+      "requirements": 6,
+      "test_plan": 4,
+      "branch": 2,
+      "write_tests": 12,
+      "implement": 40,
+      "review": 30,
+      "analyze": 8,
+      "fix": 12,
+      "commit": 4,
+      "ticket_updates": 8,
+      "cleanup": 0
+    }
+  }
+}
+```
+
 ## Rules
 
 - **Read before you act** — load the `$STATE` files your stage depends on.
 - **All pipeline outputs go under `$STATE`**, never inside `$REPO`. Code changes go in `$REPO` (via git); pipeline artifacts do not.
-- **All JSON files under `$STATE` (`state.json`, `review-findings-*.json`, `fix-list-*.json`) must be valid, raw JSON only** — never wrap file contents in markdown code fences (` ``` ` or ` ```json `), and never include surrounding prose. When updating `state.json`, preserve valid JSON syntax.
+- **All JSON files under `$STATE` (`state.json`, `review-findings-*.json`, `fix-list-*.json`, `telemetry.json`) must be valid, raw JSON only** — never wrap file contents in markdown code fences (` ``` ` or ` ```json `), and never include surrounding prose. When updating `state.json`, preserve valid JSON syntax.
 - **Never write gate verdicts by hand.** `$STATE/gates/*.json` are written *only* by the gate scripts. Read them; don't author them.
+- **Never write telemetry by hand.** `$STATE/telemetry.json` is written *only* by `bin/record-telemetry.sh`.
 - **A findings or fix-list file is only valid for its own round.** Both carry `iteration`. Before routing on a verdict, or handing a fix list to the fixer, check it equals `state.json.iteration`. A lower number, or no `iteration` at all, means the file is left over from an earlier round — the loop was interrupted mid-fan-out — so re-run that stage for that repo instead of acting on it. **Re-run it once only:** if the regenerated file still doesn't carry the current `iteration`, stop and escalate. A writer that won't set the field would otherwise spin this loop forever.
 - **`repos[].gates` is a copy, not the verdict.** The gate script's JSON under `$STATE/gates/<label>/` is authoritative. If it's gone, re-run the gate rather than trusting the copy — a resumed run must not inherit a `pass` nobody can read.
 - **A verdict is only valid for the working tree that produced it.** Verdicts live in `$STATE` and survive; the code lives in a disposable clone and doesn't. So whenever a clone is replaced or a branch recreated, that repo's `$STATE/gates/<label>/` is deleted and `repos[].gates` cleared — otherwise a fresh, empty branch inherits the old `pass`.
@@ -135,8 +183,32 @@ status   <✓ done | ⚠ escalated | ✗ failed> · total <elapsed>
 repos    <name> (<branch>)  +A −D · N files
 gates    tests: <pass|fail|skipped|blocked> (<n/n>) · build: <pass|fail|skipped|blocked>
 review   <clean|non-blocking|escalated> · <k> iteration(s)
+telemetry plan: <P> · tdd: <T> · review: <R>
+tokens   <IN> in (<HIT>% cache hit) · <OUT> out · <TOTAL> tok
 manual   <none | bullets>
 PR       <url>
 jira     <status | skipped (reason)>
 slack    <posted → <channel> | skipped (reason)>
+```
+
+And right after `## Summary`, appends the structured telemetry audit table generated from `$STATE/telemetry.json`:
+
+```markdown
+## AI Telemetry & Token Economics
+
+| Metric | Value | Breakdown / Details |
+| :--- | :--- | :--- |
+| **Total Duration** | `<total>s` | Plan: `<P>s` · TDD: `<T>s` · Review: `<R>s` |
+| **Models Deployed** | `sonnet` / `opus` | Analyst: `sonnet` · Coder: `sonnet` · Reviewer: `opus` |
+| **Input Tokens** | `<IN>` | Cache Read: `<CR>` (`<HIT>%`) · Cache Creation: `<CC>` |
+| **Output Tokens** | `<OUT>` | Completion tokens generated across stages |
+| **Total Tokens** | `<TOTAL>` | Combined context window footprint |
+| **Cache Efficiency** | `<HIT>%` | Prompt cache read hit rate across sequential subagents |
+
+### Phase Timing Breakdown
+| Macro Phase | Duration | Constituent Stages |
+| :--- | :--- | :--- |
+| **Plan & Setup** | `<P>s` | `preflight`, `jira_start`, `provision`, `requirements`, `test_plan`, `branch` |
+| **TDD & Gates** | `<T>s` | `write_tests`, `implement` |
+| **Review & Delivery** | `<R>s` | `review`, `analyze`, `fix`, `commit`, `ticket_updates`, `cleanup` |
 ```

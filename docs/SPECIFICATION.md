@@ -14,20 +14,17 @@ Unlike conversational coding assistants or unverified LLM scratchpads, the syste
 
 1. **Deterministic Quality Verification (Zero Model Self-Grading):** LLMs cannot reliably grade their own code. All build, syntax, and test validations are delegated to external, deterministic shell scripts (`gate-tests.sh`, `gate-build.sh`) whose UNIX exit codes dictate pipeline progression. The model cannot argue past or hallucinate a passing test suite.
 2. **Crash-Resilient Disk-Persisted State Machine:** All execution context, stage transitions, and inter-agent messages are persisted to disk in vendor-neutral JSON schemas (`state.json`, `review-findings.json`). If a session terminates mid-run, the pipeline can be resumed idempotently from the exact point of interruption without losing work.
-3. **Asymmetric Context Isolation:** To eliminate sycophancy (models approving their own flawed changes), authoring and review roles operate in strictly decoupled subagent sessions across asymmetric model tiers (e.g. Anthropic Claude 3.7 Sonnet for rapid code generation vs. Claude 3 Opus for adversarial review).
+3. **Asymmetric Context Isolation:** To eliminate sycophancy (models approving their own flawed changes), authoring and review roles operate in strictly decoupled subagent sessions across asymmetric model tiers (e.g. Anthropic Claude Sonnet for rapid code generation vs. Claude Opus for adversarial review).
 
 ---
 
-## 2. State Machine Formalism
+## 2. State Machine Architecture & Transitions
 
-The orchestrator operates as a discrete finite-state machine (FSM). The next state is a deterministic transition function:
-
-$$S_{t+1} = \delta(S_t, A_t, V_t)$$
-
-Where:
-* $S_t$ is the current persisted state in `$STATE/state.json`.
-* $A_t$ represents the structured file artifacts produced by subagents (`requirements.md`, `test-plan.md`, `review-findings.json`).
-* $V_t$ represents deterministic shell quality gate verdicts written to `$STATE/gates/`.
+The orchestrator operates as a discrete finite-state machine (FSM), executing a deterministic event loop over disk-persisted state (`$STATE/state.json`). At each stage:
+1. **Read State:** Loads the current phase and iteration counter from `state.json`.
+2. **Dispatch Subagent:** Launches the phase subagent in an isolated context to generate structured artifacts (`requirements.md`, `test-plan.md`, `review-findings.json`).
+3. **Execute Gate:** Runs external shell scripts (`bin/gate-build.sh`, `bin/gate-tests.sh`) that record central JSON verdicts in `$STATE/gates/`.
+4. **Advance or Loop:** Transitions to the next phase on passing gate verdicts, or increments the iteration loop counter if blocking findings survive.
 
 ```
 [Start: Ticket Intake]
@@ -115,54 +112,36 @@ All pipeline communications occur through disk-backed JSON files stored under `$
 
 ### 3.1 `state.json` (Orchestrator Source of Truth)
 
+Authored and updated exclusively by the orchestrator at every state transition. Serves as the durable finite-state machine memory:
+
 ```json
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "PipelineExecutionState",
-  "type": "object",
-  "required": ["ticket", "phase", "iteration", "max_iterations", "repos", "updated_at"],
-  "properties": {
-    "ticket": { "type": "string", "example": "PROJ-123" },
-    "issue_type": { "type": "string", "enum": ["Story", "Bug", "Task", "Epic"] },
-    "slug": { "type": "string", "example": "add-jwt-validation" },
-    "jira_status": { "type": "string", "example": "In Review" },
-    "slack_link": { "type": "string", "format": "uri" },
-    "phase": {
-      "type": "string",
-      "enum": [
-        "jira-start", "provision", "requirements", "test-plan",
-        "branch", "write-tests", "implement", "review", "analyze",
-        "fix", "commit", "ticket-updates", "cleanup", "done"
-      ]
-    },
-    "iteration": { "type": "integer", "minimum": 0, "maximum": 3 },
-    "max_iterations": { "type": "integer", "default": 3 },
-    "updated_at": { "type": "string", "format": "date-time", "example": "2026-07-07T00:00:00Z" },
-    "repos": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["name", "role", "remote", "path", "stack", "branch"],
-        "properties": {
-          "name": { "type": "string", "example": "auth-service" },
-          "role": { "type": "string", "enum": ["primary", "connected"] },
-          "remote": { "type": "string", "example": "org/auth-service" },
-          "path": { "type": "string" },
-          "stack": { "type": "string", "enum": ["dotnet", "node", "python", "maven", "generic"] },
-          "branch": { "type": "string", "example": "feature/PROJ-123-add-jwt-validation" },
-          "branch_base": { "type": "string", "default": "main" },
-          "gates": {
-            "type": "object",
-            "properties": {
-              "tests": { "type": "string", "enum": ["pass", "fail", "skipped", "blocked"] },
-              "build": { "type": "string", "enum": ["pass", "fail", "skipped", "blocked"] }
-            }
-          },
-          "pr_url": { "type": ["string", "null"] }
-        }
-      }
+  "ticket": "PROJ-1001",
+  "issue_type": "Story",              // effective type: Story | Bug | Task | Epic
+  "slug": "fix-pagination-boundary",  // short kebab summary; shared across all repos
+  "jira_status": "In Review",         // last status set by pipeline (or "skipped")
+  "slack_link": "https://...",        // notification post URI (or "skipped")
+  "repos": [
+    {
+      "name": "sandbox-repo",
+      "role": "primary",              // primary | connected
+      "remote": "org/sandbox-repo",
+      "path": "/home/user/.claude/autopilot/work/PROJ-1001/repos/sandbox-repo",
+      "stack": "node",                // dotnet | node | python | maven | generic
+      "branch": "feature/PROJ-1001-fix-pagination-boundary",
+      "branch_base": "main",          // repo base branch; falls back to default_base_branch
+      "gates": {
+        "tests": "pass",              // pass | fail | skipped | blocked
+        "build": "pass"               // pass | fail | skipped | blocked
+      },
+      "pr_url": null                  // opened pull request URL once committed
     }
-  }
+    // connected repos appended here during run with role: "connected"
+  ],
+  "phase": "done",                    // closed set of 14 legal pipeline stages
+  "iteration": 0,                     // review-fix loop counter (0 to max_iterations)
+  "max_iterations": 3,                // hard cap before escalating to human
+  "updated_at": "2026-10-16T06:00:00Z"
 }
 ```
 
@@ -209,6 +188,52 @@ Authored by the `review-analyst` (Sonnet) and consumed by the `fixer` (Sonnet). 
 }
 ```
 
+### 3.4 `telemetry.json` (AI Telemetry & Token Economics Schema)
+
+Authored and updated by `bin/record-telemetry.sh` at stage transitions and ticket completion. Records durable token usage, prompt cache efficiency, and two-tier duration metrics across pipeline stages.
+
+```json
+{
+  "ticket": "PROJ-1001",
+  "models": {
+    "analyst": "claude-sonnet",
+    "implementer": "claude-sonnet",
+    "reviewer": "claude-opus"
+  },
+  "tokens": {
+    "input": 124500,
+    "output": 14200,
+    "cache_read": 102000,
+    "cache_creation": 22500
+  },
+  "cache_hit_rate_percent": 81.9,
+  "duration_seconds": {
+    "total": 134,
+    "phases": {
+      "plan_and_setup": 20,
+      "tdd_and_gates": 52,
+      "review_and_delivery": 62
+    },
+    "stages": {
+      "preflight": 2,
+      "jira_start": 2,
+      "provision": 4,
+      "requirements": 6,
+      "test_plan": 4,
+      "branch": 2,
+      "write_tests": 12,
+      "implement": 40,
+      "review": 30,
+      "analyze": 8,
+      "fix": 12,
+      "commit": 4,
+      "ticket_updates": 8,
+      "cleanup": 0
+    }
+  }
+}
+```
+
 ---
 
 ## 4. Deterministic Quality Gate Protocol
@@ -251,7 +276,7 @@ To prevent LLMs from rubber-stamping errors, roles are partitioned into isolated
 
 ---
 
-## 6. Convergence Guarantees & Loop Invariants
+## 6. Execution Guarantees & Loop Limits
 
 To avoid unbounded token expenditure or runaway agent behavior, the pipeline guarantees the following invariants:
 
@@ -294,7 +319,7 @@ To ensure deterministic agent behavior and prevent state corruption across multi
 
 ### 8.1 Single-Ticket Conversation Session Scope
 A single conversation session is scoped to host one active ticket pipeline from intake to completion.
-* **Context Bleed Prevention:** Sequential execution of multiple tickets within the same conversation window accumulates token bloat and risks cross-ticket AST hallucination.
+* **Context Bleed Prevention:** Sequential execution of multiple tickets within the same conversation window accumulates token bloat and risks cross-ticket code hallucination.
 * **Intake Guardrail:** If an orchestrator detects conversational history from a prior ticket run, it must pause and present a user confirmation prompt before continuing, advising the developer to reset context via `/clear` or open a fresh terminal.
 * **Multi-Repo Coexistence:** A single ticket run may span multiple provisioned repositories (e.g. backend service, frontend client). The orchestrator coordinates all affected repositories within this single session, fanning out subagents per repository while maintaining isolation from previous tickets.
 
