@@ -13,16 +13,32 @@ parse_args "$@"
 # one workspace and whose typechecked source lives in another then advances with its source never
 # compiled. Script names vary too (typecheck / type-check / tsc), and matching parsed JSON keys
 # rather than grepping avoids a script that merely CONTAINS the word.
+# Resolve node binary across POSIX and Windows environments
+NODE_BIN="node"
+if ! command -v "$NODE_BIN" >/dev/null 2>&1 && command -v node.exe >/dev/null 2>&1; then
+  NODE_BIN="node.exe"
+fi
+
+_to_node_path() {
+  local p="$1"
+  if [ "$NODE_BIN" = "node.exe" ] && command -v wslpath >/dev/null 2>&1; then
+    wslpath -m "$p" 2>/dev/null || printf '%s' "$p"
+  else
+    printf '%s' "$p"
+  fi
+}
+
 _pkg_script() {  # <package.json> <name>... -> prints the first script name that exists
   local f="$1"; shift
   [ -f "$f" ] || return 1
-  node -e '
+  local target_f="$(_to_node_path "$f")"
+  "$NODE_BIN" -e '
     const fs=require("fs");
     let p; try{p=JSON.parse(fs.readFileSync(process.argv[1],"utf8"))}catch{process.exit(1)}
     const s=(p&&p.scripts)||{};
     for(const n of process.argv.slice(2)) if(Object.prototype.hasOwnProperty.call(s,n)){console.log(n);process.exit(0)}
     process.exit(1)
-  ' "$f" "$@" 2>/dev/null
+  ' "$target_f" "$@" 2>/dev/null
 }
 
 node_build_cmd() {
@@ -34,8 +50,9 @@ node_build_cmd() {
   # Otherwise run every workspace that declares one. The gate fails if ANY fails: a monorepo
   # where only half the source compiles is not a pass.
   local -a dirs=() cmds=()
+  local target_repo="$(_to_node_path "$repo")"
   while IFS= read -r rel; do [ -n "$rel" ] && dirs+=("$rel"); done < <(
-    node -e '
+    "$NODE_BIN" -e '
       const fs=require("fs"),path=require("path"),root=process.argv[1];
       let ws=[]; try{const p=JSON.parse(fs.readFileSync(path.join(root,"package.json"),"utf8"));
         ws=Array.isArray(p.workspaces)?p.workspaces:((p.workspaces&&p.workspaces.packages)||[])}catch{}
@@ -50,7 +67,7 @@ node_build_cmd() {
         try{for(const e of fs.readdirSync(path.join(root,base),{withFileTypes:true})) if(e.isDirectory()) add(base+"/"+e.name)}catch{}
       }
       for(const d of out) console.log(d);
-    ' "$repo" 2>/dev/null
+    ' "$target_repo" 2>/dev/null
   )
   for rel in "${dirs[@]}"; do
     _safe_path "workspace directory" "$rel" || continue

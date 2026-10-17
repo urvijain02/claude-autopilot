@@ -7,9 +7,9 @@ Thank you for your interest in contributing to **Claude Autopilot**! We welcome 
 ## 1. Architectural Overview
 
 Before contributing, please review the core architectural blueprints:
-* **[System Architecture Specification (RFC-001)](docs/SPECIFICATION.md):** Formal state machine transitions, JSON data schemas, deterministic gate contracts, and convergence proofs.
-* **[Evaluation Protocol & Benchmarks (RFC-002)](docs/EVALS.md):** Evaluation methodology, metrics (Pass@1, Pass@3, ARR, cost formulas), and the 3 Golden Benchmark tasks.
-* **[Security Policy & Trust Model](SECURITY.md):** Workspace sandboxing, permission quarantining, and credential handling invariants.
+* **[System Architecture Specification (RFC-001)](docs/SPECIFICATION.md):** State machine mechanics, JSON schemas, quality gate contracts, and loop guarantees.
+* **[Evaluation Protocol & Benchmarks (RFC-002)](docs/EVALS.md):** Quantitative evaluation methodology, Pass@1 / Pass@3 metrics, and the 3 Golden Benchmark tasks.
+* **[Security Policy & Trust Model](SECURITY.md):** Workspace sandboxing, permission quarantining, and deterministic guardrail layers.
 
 The repository is organized into five modular layers:
 

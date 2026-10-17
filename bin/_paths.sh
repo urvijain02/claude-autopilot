@@ -49,26 +49,62 @@ _safe_component() {
 # satisfies `command -v` and fails on exec. Without either parser only a plain one-line
 # `"key": "value"` can be read safely, and a misread here would send gate output to a
 # directory the orchestrator never reads — so an unreadable value stops the run.
-_have_python() { command -v python3 >/dev/null 2>&1 && python3 -c '' >/dev/null 2>&1; }
+# Centralized JSON Engine Resolver: checks jq -> python3 -> python -> node -> none.
+# Probed securely across POSIX, Windows, and macOS environments.
+resolve_json_engine() {
+  if command -v jq >/dev/null 2>&1; then
+    printf 'jq'
+  elif command -v python3 >/dev/null 2>&1 && python3 -c '' >/dev/null 2>&1; then
+    printf 'python3'
+  elif command -v python >/dev/null 2>&1 && python -c '' >/dev/null 2>&1; then
+    printf 'python'
+  elif command -v node >/dev/null 2>&1; then
+    printf 'node'
+  elif command -v node.exe >/dev/null 2>&1; then
+    printf 'node.exe'
+  else
+    printf 'none'
+  fi
+}
+
+_have_python() {
+  local eng
+  eng="$(resolve_json_engine)"
+  [ "$eng" = "python3" ] || [ "$eng" = "python" ]
+}
 
 _config_value() {
   local cfg="$AUTOPILOT_HOME/config.json" key="$1" v=""
   [ -f "$cfg" ] || return 0
 
-  if command -v jq >/dev/null 2>&1; then
-    jq -r --arg k "$key" '.[$k] | if type == "string" then . else empty end' "$cfg" 2>/dev/null || true
-    return 0
-  fi
-
-  if _have_python; then
-    python3 -c 'import json, sys
+  local engine
+  engine="$(resolve_json_engine)"
+  case "$engine" in
+    jq)
+      jq -r --arg k "$key" '.[$k] | if type == "string" then . else empty end' "$cfg" 2>/dev/null || true
+      return 0
+      ;;
+    python3|python)
+      "$engine" -c 'import json, sys
 try:
-    v = json.load(open(sys.argv[1])).get(sys.argv[2], "")
+    v = json.load(open(sys.argv[1], encoding="utf-8")).get(sys.argv[2], "")
 except Exception:
     v = ""
 sys.stdout.write(v if isinstance(v, str) else "")' "$cfg" "$key" 2>/dev/null || true
-    return 0
-  fi
+      return 0
+      ;;
+    node|node.exe)
+      "$engine" -e '
+const fs = require("fs");
+try {
+  const cfg = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+  const v = cfg[process.argv[2]];
+  if (typeof v === "string") process.stdout.write(v);
+} catch {}
+' "$cfg" "$key" 2>/dev/null || true
+      return 0
+      ;;
+  esac
 
   _plain_string_value "$key" "$cfg"
 }
@@ -102,7 +138,7 @@ _paths_preflight() {
   local cfg="$AUTOPILOT_HOME/config.json" k
 
   # Readability: only a concern when there is a config and no real parser to read it with.
-  if [ -f "$cfg" ] && ! command -v jq >/dev/null 2>&1 && ! _have_python; then
+  if [ -f "$cfg" ] && [ "$(resolve_json_engine)" = "none" ]; then
     for k in state_root workspace_root; do
       # An env override means the config value is never consulted, so it needn't be readable.
       if [ "$k" = state_root ] && [ -n "${AUTOPILOT_STATE_DIR:-}" ]; then continue; fi

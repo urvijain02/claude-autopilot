@@ -21,7 +21,7 @@ Evaluating autonomous software engineering (SWE) agents requires fundamentally d
       ▼                                      ▼                                      ▼
 ┌───────────────────────────┐  ┌───────────────────────────┐  ┌───────────────────────────┐
 │  Deterministic Resolution │  │     Adversarial Review    │  │    Loop Convergence &     │
-│       (Pass@1 / Pass@3)   │  │   Sensitivity (ARR / ARP) │  │   Iteration Efficiency    │
+│       (Pass@1 / Pass@3)   │  │   Sensitivity & Precision │  │   Iteration Efficiency    │
 └───────────────────────────┘  └───────────────────────────┘  └───────────────────────────┘
 ```
 
@@ -44,26 +44,23 @@ A benchmark task is scored as **Resolved** if and only if all four deterministic
   `Pass@1 = (Tasks resolved on first try with 0 fix iterations) / (Total benchmark tasks)`  
   Measures whether the initial implementation satisfies all deterministic quality gates and receives an immediate `CLEAN` approval from the Opus reviewer without requiring fix cycles.
 
-* **Pass@3 (Bounded Convergence Rate):**  
+* **Pass@3 (3-Attempt Resolution Rate):**  
   `Pass@3 = (Tasks resolved within 3 review-fix iterations) / (Total benchmark tasks)`  
   Measures whether the implementer-reviewer-fixer loop successfully converges within the system loop ceiling of 3 iterations.
 
 ---
 
-### 2.2 Adversarial Review Sensitivity (Recall & Precision)
+### 2.2 Adversarial Review Sensitivity & False-Positive Precision
 
 To prevent LLM sycophancy (models approving their own flawed code), the review engine is evaluated against ground-truth defects:
 
-* **Adversarial Review Recall (ARR):**  
-  `ARR = (Injected defects detected by reviewer) / (Total injected defects)`  
-  Measures the percentage of deliberate defects caught by the reviewer, ensuring high sensitivity to security invariants and logic flaws.
-
-* **Adversarial Review Precision (ARP):**  
-  `ARP = (Actionable blocking defects) / (Total reported review findings)`  
-  Measures the signal-to-noise ratio of findings to ensure the reviewer does not generate spurious blocking nits that stall delivery.
+* **Defect Detection (Reviewer Recall):**  
+  Measures whether deliberate flaws are caught by the reviewer (target: 100% on security invariants, such as token clock skew bypass in `PROJ-1002`).
+* **Signal-to-Noise (Reviewer Precision):**  
+  Ensures reported findings are real, actionable blocking defects rather than spurious stylistic nits that unnecessarily stall delivery.
 
 > [!NOTE]
-> Adversarial Review Recall (ARR) and Precision (ARP) metrics are formally specified in RFC-002. Automated test harnesses and ground-truth defect fixtures are scheduled for Phase 5 (CI & Automated Benchmarks).
+> Automated ground-truth defect fixtures and regression suites are scheduled for Phase 5 (CI & Automated Benchmarks).
 
 ---
 
@@ -105,7 +102,7 @@ The evaluation suite defines three representative golden tasks bundled directly 
 | Benchmark ID | Category | Complexity | Target Invariants Tested | Sample Ticket |
 |---|---|---|---|---|
 | **PROJ-1001** | Boundary Regression | Single-Repo | TDD Red Gate, minimal diff footprint, Pass@1 resolution. | [`examples/sample-ticket-proj-1001.md`](../examples/sample-ticket-proj-1001.md) |
-| **PROJ-1002** | Security & Auth Validation | Single-Repo | Injected token expiry bypass; target Opus review sensitivity (target ARR: 100%), fix loop convergence at iteration 1. | [`examples/sample-ticket-proj-1002.md`](../examples/sample-ticket-proj-1002.md) |
+| **PROJ-1002** | Security & Auth Validation | Single-Repo | Injected token expiry bypass; target Opus reviewer recall: 100% detection, fix loop convergence at iteration 1. | [`examples/sample-ticket-proj-1002.md`](../examples/sample-ticket-proj-1002.md) |
 | **PROJ-1003** | Contract Update | Multi-Repo | API microservice schema addition + consumer library deserializer update; isolated clones, sibling PR cross-linking. | [`examples/sample-ticket-proj-1003.md`](../examples/sample-ticket-proj-1003.md) |
 
 ### 3.2 Tier 1: Executing the Benchmark & Gate Harness
@@ -141,7 +138,7 @@ To run an autonomous agent evaluation from scratch on a live task:
 > **Multi-Task Benchmark Hygiene (Step 0.5 Session Isolation):**  
 > To guarantee valid Pass@1 and token efficiency measurements, always run `/clear` between consecutive Tier 2 benchmark runs.  
 > 
-> If you evaluate `PROJ-1001` and subsequently trigger `PROJ-1002` in the same conversation window without clearing, the **Step 0.5 Session Isolation Guardrail** will pause and prompt for confirmation before proceeding, preventing previous ticket ASTs and files from contaminating the new evaluation.
+> If you evaluate `PROJ-1001` and subsequently trigger `PROJ-1002` in the same conversation window without clearing, the **Step 0.5 Session Isolation Guardrail** will pause and prompt for confirmation before proceeding, preventing previous ticket source files from contaminating the new evaluation.
 
 ---
 
@@ -149,5 +146,5 @@ To run an autonomous agent evaluation from scratch on a live task:
 
 In Phase 5, this protocol will be automated via GitHub Actions (`.github/workflows/ci.yml`):
 * Every prompt edit or gate script modification triggers the golden benchmark matrix.
-* Automated defect-injection fixtures (`examples/eval-fixtures/`) benchmark reviewer recall (ARR) and precision (ARP).
+* Automated defect-injection fixtures (`examples/eval-fixtures/`) benchmark reviewer recall and false-positive precision.
 * Automated PR comments report Pass@1, Pass@3, and regression status against baseline.

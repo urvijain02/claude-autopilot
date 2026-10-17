@@ -29,7 +29,7 @@
 * The orchestrator and subagents operate solely within this directory tree. They do not execute within your primary developer directories, preventing unintended modifications to local unstaged work or host configuration.
 * Setting `cleanup_after_pr: true` automatically purges the workspace clones once pull requests are opened.
 
-### 2.2 Asymmetric Permission Quarantining
+### 2.2 Strict Role & Permission Boundaries
 * **Implementer (Sonnet):** Scoped strictly to repository source code edits and executing the test/build gate scripts. Has zero permission to mark review findings as resolved or advance pipeline stages directly.
 * **Adversarial Reviewer (Opus):** Operates in a fresh, isolated context window with **zero code edit permissions**. Its output is restricted exclusively to writing structured findings to `$STATE/review-findings-<label>.json`. It cannot alter codebase files, preventing prompt injection attacks from malicious repository contents attempting to hijack the reviewer.
 * **Orchestrator:** High-level coordinator that transitions state machine phases based strictly on disk-persisted state and gate output. Has zero direct code-edit rights.
@@ -39,7 +39,7 @@
 * All verification is executed by deterministic shell scripts (`gate-tests.sh`, `gate-build.sh`) whose exit codes (`0` for pass, `1` for fail, `3` for blocked) govern state transitions.
 * A compromised or hallucinating model cannot bypass a failing test suite.
 
-### 2.4 Denial-of-Wallet & Infinite Loop Mitigation
+### 2.4 API Budget Protection & Infinite Loop Limits
 * The review-fix cycle enforces a hard ceiling of `max_iterations = 3`.
 * If blocking defects persist after three iterations, the pipeline automatically halts and triggers an `Escalate to Human` verdict. It never enters an unbounded execution loop that drains API credits or token budgets.
 
