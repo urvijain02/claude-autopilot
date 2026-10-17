@@ -52,6 +52,17 @@ _safe_component() {
 # Centralized JSON Engine Resolver: checks jq -> python3 -> python -> node -> none.
 # Probed securely across POSIX, Windows, and macOS environments.
 resolve_json_engine() {
+  if [ -n "${AUTOPILOT_JSON_ENGINE:-}" ]; then
+    case "$AUTOPILOT_JSON_ENGINE" in
+      jq|python3|python|node|node.exe)
+        printf '%s' "$AUTOPILOT_JSON_ENGINE"
+        return 0
+        ;;
+      *)
+        echo "Warning: Unsupported AUTOPILOT_JSON_ENGINE='$AUTOPILOT_JSON_ENGINE'; falling back to auto-detection." >&2
+        ;;
+    esac
+  fi
   if command -v jq >/dev/null 2>&1; then
     printf 'jq'
   elif command -v python3 >/dev/null 2>&1 && python3 -c '' >/dev/null 2>&1; then
@@ -74,7 +85,7 @@ _have_python() {
 }
 
 _config_value() {
-  local cfg="$AUTOPILOT_HOME/config.json" key="$1" v=""
+  local cfg="$AUTOPILOT_HOME/config.json" key="$1"
   [ -f "$cfg" ] || return 0
 
   local engine

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2034
 # Shared helpers for the generic gate scripts.
 # One install at ${CLAUDE_PLUGIN_ROOT}/bin serves every repo. Gates run commands
 # INSIDE the target repo (--repo) and write verdicts to a CENTRAL state dir, so

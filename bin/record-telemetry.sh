@@ -701,4 +701,8 @@ case "$ENGINE" in
   node|node.exe)
     run_with_node "$ENGINE"
     ;;
+  *)
+    echo "Error: record-telemetry.sh encountered unsupported JSON engine '$ENGINE'" >&2
+    exit 1
+    ;;
 esac

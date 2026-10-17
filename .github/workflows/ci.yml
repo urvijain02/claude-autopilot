@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+jobs:
+  lint-and-validate:
+    name: Lint & Schema Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Static Shell Analysis (ShellCheck)
+        run: |
+          shellcheck --severity=warning -x -e SC1091 bin/*.sh
+
+      - name: Validate Plugin & Config JSON Schemas
+        run: |
+          python -c "
+          import json, os, sys
+          files = [
+              '.claude-plugin/plugin.json',
+              '.claude-plugin/marketplace.json',
+              'config.template.json',
+              'examples/sandbox-repo/package.json',
+              'examples/sandbox-client/package.json'
+          ]
+          for f in files:
+              if not os.path.exists(f):
+                  print(f'MISSING: {f}', file=sys.stderr)
+                  sys.exit(1)
+              with open(f, 'r', encoding='utf-8') as fp:
+                  json.load(fp)
+              print(f'✓ Validated JSON: {f}')
+          "
+
+  evals-matrix:
+    name: Golden Evals (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          set-safe-directory: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run Tier 1 Golden Benchmarks & Invariant Verification
+        shell: bash
+        run: |
+          chmod +x bin/*.sh || true
+          ./bin/run-evals.sh all
+
+      - name: Verify Multi-Engine Fallbacks (jq, python3, node)
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: |
+          for engine in jq python3 node; do
+            echo "::group::Testing engine implementation: $engine"
+            AUTOPILOT_JSON_ENGINE="$engine" ./bin/run-evals.sh all
+            echo "::endgroup::"
+          done
