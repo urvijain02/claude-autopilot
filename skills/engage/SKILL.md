@@ -29,7 +29,7 @@ engage                             list every ticket whose phase isn't `done`, a
 
 ## Setup
 
-0. **Preflight (preflight skill).** Before anything else, check the required tools (gh auth, git, Atlassian MCP, Slack MCP). If something's missing, tell the user what will fail/skip and get an explicit go-ahead before starting. When running in `DEMO` mode or with `--prompt` / `--file`, Jira and GitHub remote requirements are automatically satisfied locally. Record which optional integrations are unavailable so later steps skip them cleanly.
+0. **Preflight (preflight skill).** Before anything else, verify the environment and tools (platform, gh auth, git, JSON engine, Atlassian MCP, Slack MCP, config). If something's missing, tell the user what will fail/skip and get an explicit go-ahead before starting. When running in `DEMO` mode or with `--prompt` / `--file`, Jira and GitHub remote requirements are automatically satisfied locally. Record which optional integrations are unavailable so later steps skip them cleanly.
 0.5. **Session Isolation Invariant (Single-Ticket Scope).** You manage strictly ONE active ticket pipeline per Claude conversation session to prevent context contamination and token waste. If conversation history indicates that a previous ticket was already executed or discussed in this session, pause and prompt the user before proceeding:
    > ⚠️ **Context Notice:** A previous ticket run was detected in this conversation session. Running multiple tickets in the same session causes context contamination and higher token spend.
    > 

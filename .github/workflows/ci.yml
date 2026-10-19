@@ -34,20 +34,24 @@ jobs:
         run: |
           python -c "
           import json, os, sys
-          files = [
-              '.claude-plugin/plugin.json',
-              '.claude-plugin/marketplace.json',
-              'config.template.json',
-              'examples/sandbox-repo/package.json',
-              'examples/sandbox-client/package.json'
-          ]
-          for f in files:
+          rules = {
+              '.claude-plugin/plugin.json': ['name', 'description', 'version', 'author', 'license'],
+              '.claude-plugin/marketplace.json': ['name', 'plugins'],
+              'config.template.json': ['state_root', 'workspace_root'],
+              'examples/sandbox-repo/package.json': ['name', 'version', 'scripts'],
+              'examples/sandbox-client/package.json': ['name', 'version', 'scripts']
+          }
+          for f, req_keys in rules.items():
               if not os.path.exists(f):
                   print(f'MISSING: {f}', file=sys.stderr)
                   sys.exit(1)
               with open(f, 'r', encoding='utf-8') as fp:
-                  json.load(fp)
-              print(f'✓ Validated JSON: {f}')
+                  data = json.load(fp)
+              missing = [k for k in req_keys if k not in data]
+              if missing:
+                  print(f'SCHEMA ERROR in {f}: missing required keys: {missing}', file=sys.stderr)
+                  sys.exit(1)
+              print(f'✓ Validated schema: {f}')
           "
 
   evals-matrix:

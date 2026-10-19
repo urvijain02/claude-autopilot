@@ -1,5 +1,6 @@
 # Claude Autopilot: Model-Agnostic Autonomous SWE-Agent Pipeline
 
+[![CI](https://github.com/urvijain02/claude-autopilot/actions/workflows/ci.yml/badge.svg)](https://github.com/urvijain02/claude-autopilot/actions/workflows/ci.yml)
 [![Architecture: Model-Agnostic](https://img.shields.io/badge/Architecture-Model--Agnostic-blueviolet)](#-is-this-locked-into-anthropics-claude-ecosystem)
 [![Verification: Deterministic TDD](https://img.shields.io/badge/Verification-Deterministic_TDD-green)](#two-kinds-of-gate-dont-confuse-them)
 [![Platform: Claude Code | Universal](https://img.shields.io/badge/Platform-Claude_Code_%7C_Universal-blue)](#architecture--state-machine)
@@ -26,8 +27,13 @@ Runs offline with zero external dependencies to verify that the target repositor
 git clone https://github.com/urvijain02/claude-autopilot.git
 cd claude-autopilot
 
-# Run the deterministic evaluation benchmark harness:
+# Run Tier 1 evaluation harness (auto-detected engine: jq → python3 → node):
 ./bin/run-evals.sh
+
+# Or explicitly verify under specific engine fallbacks:
+AUTOPILOT_JSON_ENGINE=python3 ./bin/run-evals.sh
+AUTOPILOT_JSON_ENGINE=node    ./bin/run-evals.sh
+AUTOPILOT_JSON_ENGINE=jq      ./bin/run-evals.sh
 ```
 
 ### Tier 2: Live Autonomous Agent Evaluation

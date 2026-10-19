@@ -60,7 +60,7 @@ To prevent LLM sycophancy (models approving their own flawed code), the review e
   Ensures reported findings are real, actionable blocking defects rather than spurious stylistic nits that unnecessarily stall delivery.
 
 > [!NOTE]
-> Automated ground-truth defect fixtures and regression suites are scheduled for Phase 5 (CI & Automated Benchmarks).
+> Automated Tier 1 benchmark suites, quality gate invariants, and multi-engine telemetry verification are continuously validated in CI across Ubuntu, macOS, and Windows (`.github/workflows/ci.yml`).
 
 ---
 
@@ -142,9 +142,9 @@ To run an autonomous agent evaluation from scratch on a live task:
 
 ---
 
-## 4. Continuous Integration & Regression Testing (Phase 5 Roadmap)
+## 4. Continuous Integration & Automated Regression Testing
 
-In Phase 5, this protocol will be automated via GitHub Actions (`.github/workflows/ci.yml`):
-* Every prompt edit or gate script modification triggers the golden benchmark matrix.
-* Automated defect-injection fixtures (`examples/eval-fixtures/`) benchmark reviewer recall and false-positive precision.
-* Automated PR comments report Pass@1, Pass@3, and regression status against baseline.
+This evaluation protocol is automated via GitHub Actions ([`.github/workflows/ci.yml`](../.github/workflows/ci.yml)) across a 3-OS matrix (`ubuntu-latest`, `macos-latest`, `windows-latest`):
+* Every pull request and push to `main` executes the Tier 1 golden benchmark matrix (`bin/run-evals.sh all`).
+* Validates compiler and test gate determinism, telemetry invariant mathematical precision ($T = \sum P_i$), and JSON engine fallback parity (`jq`, `python3`, `node`).
+* Protected by branch protection rules: all 4 status checks (`Lint & Schema Validation`, `Golden Evals (ubuntu-latest)`, `Golden Evals (macos-latest)`, `Golden Evals (windows-latest)`) must pass before merging.

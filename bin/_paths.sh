@@ -8,7 +8,7 @@
 #   2. "state_root" / "workspace_root" in ~/.claude/autopilot/config.json
 #   3. ~/.claude/autopilot/state  /  ~/.claude/autopilot/work
 #
-# Sourced, not executed.
+# Sourced by default, or executed directly to query path/engine resolvers.
 
 AUTOPILOT_HOME="${AUTOPILOT_HOME:-$HOME/.claude/autopilot}"
 AUTOPILOT_HOME="$(printf '%s' "$AUTOPILOT_HOME" | tr '\\' '/')"
@@ -156,7 +156,7 @@ _paths_preflight() {
       if [ "$k" = workspace_root ] && [ -n "${AUTOPILOT_WORKSPACE_DIR:-}" ]; then continue; fi
       if ! grep -qE "\"$k\"[[:space:]]*:" "$cfg" 2>/dev/null; then continue; fi
       if [ -n "$(_plain_string_value "$k" "$cfg")" ]; then continue; fi
-      echo "autopilot: cannot read \"$k\" from $cfg without jq or python3 — install either," >&2
+      echo "autopilot: cannot read \"$k\" from $cfg without jq, python3, or node — install either," >&2
       echo "           or set AUTOPILOT_STATE_DIR / AUTOPILOT_WORKSPACE_DIR instead." >&2
       return 1
     done
@@ -169,3 +169,18 @@ _paths_preflight() {
   return 0
 }
 _paths_preflight || exit 1
+
+# Dual-mode execution dispatcher: query resolvers directly from the CLI
+if [ "${BASH_SOURCE[0]}" = "$0" ]; then
+  case "${1:-}" in
+    resolve_json_engine|resolve_state_root|resolve_workspace_root)
+      "$1"
+      ;;
+    "")
+      ;;
+    *)
+      echo "Unknown function: $1" >&2
+      exit 1
+      ;;
+  esac
+fi
