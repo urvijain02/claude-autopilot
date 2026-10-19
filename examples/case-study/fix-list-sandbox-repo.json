@@ -1,0 +1,16 @@
+{
+  "repo": "sandbox-repo",
+  "iteration": 1,
+  "fixes": [
+    {
+      "finding_id": "FINDING-1",
+      "accepted": true,
+      "action": "Clamp options.page using Math.max(1, parseInt(options.page, 10) || 1) and assert clamping behavior in test/paginate.test.js",
+      "files": [
+        "src/paginate.js",
+        "test/paginate.test.js"
+      ],
+      "reason_if_rejected": ""
+    }
+  ]
+}

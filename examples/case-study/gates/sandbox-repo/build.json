@@ -1,0 +1,11 @@
+{
+  "gate": "build",
+  "label": "sandbox-repo",
+  "status": "pass",
+  "exit_code": 0,
+  "stack": "node",
+  "repo": "examples/sandbox-repo",
+  "command": "npm run typecheck",
+  "log_file": "examples/case-study/gates/sandbox-repo/build.log",
+  "timestamp": "2026-10-18T14:22:09Z"
+}

@@ -1,0 +1,39 @@
+{
+  "ticket": "PROJ-1001",
+  "models": {
+    "analyst": "claude-sonnet",
+    "implementer": "claude-sonnet",
+    "reviewer": "claude-opus"
+  },
+  "tokens": {
+    "input": 59400,
+    "output": 6250,
+    "cache_read": 50200,
+    "cache_creation": 9200
+  },
+  "cache_hit_rate_percent": 84.5,
+  "duration_seconds": {
+    "total": 52,
+    "phases": {
+      "plan_and_setup": 14,
+      "tdd_and_gates": 22,
+      "review_and_delivery": 16
+    },
+    "stages": {
+      "preflight": 1,
+      "jira_start": 1,
+      "provision": 2,
+      "requirements": 5,
+      "test_plan": 3,
+      "branch": 2,
+      "write_tests": 8,
+      "implement": 14,
+      "review": 6,
+      "analyze": 2,
+      "fix": 4,
+      "commit": 1,
+      "ticket_updates": 3,
+      "cleanup": 0
+    }
+  }
+}

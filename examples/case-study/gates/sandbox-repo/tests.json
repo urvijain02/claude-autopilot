@@ -1,0 +1,11 @@
+{
+  "gate": "tests",
+  "label": "sandbox-repo",
+  "status": "pass",
+  "exit_code": 0,
+  "stack": "node",
+  "repo": "examples/sandbox-repo",
+  "command": "npm test",
+  "log_file": "examples/case-study/gates/sandbox-repo/tests.log",
+  "timestamp": "2026-10-18T14:22:10Z"
+}
