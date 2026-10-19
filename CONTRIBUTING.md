@@ -125,13 +125,26 @@ The plugin version appears in **two** files and both must be updated together wh
 
 ### Submitting a PR
 1. Create a feature branch: `git checkout -b feat/my-enhancement`.
-2. Ensure shell scripts pass syntax checks:
+2. Ensure shell scripts pass syntax and POSIX linting checks:
    ```bash
    bash -n bin/*.sh
+   shellcheck --severity=warning -x -e SC1091 bin/*.sh
    ```
 3. Run the evaluation benchmark harness to verify gate determinism and prevent regressions:
    ```bash
-   ./bin/run-evals.sh
+   # Run all golden benchmarks with default engine (jq)
+   ./bin/run-evals.sh all
+
+   # Verify functional equivalence under fallback engines
+   AUTOPILOT_JSON_ENGINE=python3 ./bin/run-evals.sh all
+   AUTOPILOT_JSON_ENGINE=node ./bin/run-evals.sh all
    ```
 4. Commit with a concise summary and structured Conventional Commit bullet points.
 5. Push and open a pull request against `main`. All PRs are reviewed for architectural consistency, gate determinism, and license compliance.
+
+### Branch Protection & Required Status Checks
+The `main` branch is protected by automated GitHub Actions CI rules. Direct pushes to `main` are restricted, and all changes must arrive via a Pull Request. Every PR must pass all 4 required status checks across the 3-OS matrix before merging:
+1. **`Lint & Schema Validation`** (`ubuntu-latest`): Runs native ShellCheck on all `bin/*.sh` scripts and validates plugin manifest JSON schemas.
+2. **`Golden Evals (ubuntu-latest)`**: Executes Tier 1 Golden Benchmark harness across `jq`, `python3`, and `node` JSON engines.
+3. **`Golden Evals (macos-latest)`**: Executes Tier 1 Golden Benchmark harness on macOS Darwin.
+4. **`Golden Evals (windows-latest)`**: Executes Tier 1 Golden Benchmark harness on Windows runner (Git Bash).

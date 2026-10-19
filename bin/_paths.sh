@@ -8,7 +8,7 @@
 #   2. "state_root" / "workspace_root" in ~/.claude/autopilot/config.json
 #   3. ~/.claude/autopilot/state  /  ~/.claude/autopilot/work
 #
-# Sourced, not executed.
+# Sourced by default, or executed directly to query path/engine resolvers.
 
 AUTOPILOT_HOME="${AUTOPILOT_HOME:-$HOME/.claude/autopilot}"
 AUTOPILOT_HOME="$(printf '%s' "$AUTOPILOT_HOME" | tr '\\' '/')"
@@ -52,6 +52,17 @@ _safe_component() {
 # Centralized JSON Engine Resolver: checks jq -> python3 -> python -> node -> none.
 # Probed securely across POSIX, Windows, and macOS environments.
 resolve_json_engine() {
+  if [ -n "${AUTOPILOT_JSON_ENGINE:-}" ]; then
+    case "$AUTOPILOT_JSON_ENGINE" in
+      jq|python3|python|node|node.exe)
+        printf '%s' "$AUTOPILOT_JSON_ENGINE"
+        return 0
+        ;;
+      *)
+        echo "Warning: Unsupported AUTOPILOT_JSON_ENGINE='$AUTOPILOT_JSON_ENGINE'; falling back to auto-detection." >&2
+        ;;
+    esac
+  fi
   if command -v jq >/dev/null 2>&1; then
     printf 'jq'
   elif command -v python3 >/dev/null 2>&1 && python3 -c '' >/dev/null 2>&1; then
@@ -74,7 +85,7 @@ _have_python() {
 }
 
 _config_value() {
-  local cfg="$AUTOPILOT_HOME/config.json" key="$1" v=""
+  local cfg="$AUTOPILOT_HOME/config.json" key="$1"
   [ -f "$cfg" ] || return 0
 
   local engine
@@ -145,7 +156,7 @@ _paths_preflight() {
       if [ "$k" = workspace_root ] && [ -n "${AUTOPILOT_WORKSPACE_DIR:-}" ]; then continue; fi
       if ! grep -qE "\"$k\"[[:space:]]*:" "$cfg" 2>/dev/null; then continue; fi
       if [ -n "$(_plain_string_value "$k" "$cfg")" ]; then continue; fi
-      echo "autopilot: cannot read \"$k\" from $cfg without jq or python3 — install either," >&2
+      echo "autopilot: cannot read \"$k\" from $cfg without jq, python3, or node — install either," >&2
       echo "           or set AUTOPILOT_STATE_DIR / AUTOPILOT_WORKSPACE_DIR instead." >&2
       return 1
     done
@@ -158,3 +169,18 @@ _paths_preflight() {
   return 0
 }
 _paths_preflight || exit 1
+
+# Dual-mode execution dispatcher: query resolvers directly from the CLI
+if [ "${BASH_SOURCE[0]}" = "$0" ]; then
+  case "${1:-}" in
+    resolve_json_engine|resolve_state_root|resolve_workspace_root)
+      "$1"
+      ;;
+    "")
+      ;;
+    *)
+      echo "Unknown function: $1" >&2
+      exit 1
+      ;;
+  esac
+fi

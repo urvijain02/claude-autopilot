@@ -31,7 +31,8 @@ _to_node_path() {
 _pkg_script() {  # <package.json> <name>... -> prints the first script name that exists
   local f="$1"; shift
   [ -f "$f" ] || return 1
-  local target_f="$(_to_node_path "$f")"
+  local target_f
+  target_f="$(_to_node_path "$f")"
   "$NODE_BIN" -e '
     const fs=require("fs");
     let p; try{p=JSON.parse(fs.readFileSync(process.argv[1],"utf8"))}catch{process.exit(1)}
@@ -42,15 +43,16 @@ _pkg_script() {  # <package.json> <name>... -> prints the first script name that
 }
 
 node_build_cmd() {
-  local repo="$1" n rel
+  local target_dir="$1" n rel
   local names=(typecheck type-check tsc build)
   # The root wins when it declares one: it is the repo's own entry point and may itself fan out.
-  if n="$(_pkg_script "$repo/package.json" "${names[@]}")"; then printf 'npm run %s' "$n"; return; fi
+  if n="$(_pkg_script "$target_dir/package.json" "${names[@]}")"; then printf 'npm run %s' "$n"; return; fi
 
   # Otherwise run every workspace that declares one. The gate fails if ANY fails: a monorepo
   # where only half the source compiles is not a pass.
   local -a dirs=() cmds=()
-  local target_repo="$(_to_node_path "$repo")"
+  local target_repo
+  target_repo="$(_to_node_path "$target_dir")"
   while IFS= read -r rel; do [ -n "$rel" ] && dirs+=("$rel"); done < <(
     "$NODE_BIN" -e '
       const fs=require("fs"),path=require("path"),root=process.argv[1];
@@ -71,7 +73,7 @@ node_build_cmd() {
   )
   for rel in "${dirs[@]}"; do
     _safe_path "workspace directory" "$rel" || continue
-    if n="$(_pkg_script "$repo/$rel/package.json" "${names[@]}")"; then
+    if n="$(_pkg_script "$target_dir/$rel/package.json" "${names[@]}")"; then
       cmds+=("npm run $n --prefix '$rel'")
     fi
   done

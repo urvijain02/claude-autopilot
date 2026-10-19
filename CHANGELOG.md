@@ -63,4 +63,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * **Windows Node.js Path & Binary Discovery:** Resolved cross-platform runtime disparities in `bin/gate-build.sh` and `bin/run-evals.sh` via `node.exe` fallback discovery and POSIX-to-Windows path normalization (`wslpath -m`), enabling deterministic gate and telemetry execution on Windows hosts.
 * **Token Invariant Schema Synchronization:** Synchronized Section 3.4 of `docs/SPECIFICATION.md` and `skills/state-protocol/SKILL.md` with column-aligned comments and exact 14 canonical stages mapping dictionary.
 
+---
+
+### Phase 5: Cross-Platform & Developer Ergonomics
+
+#### Added
+* **Automated 3-OS Continuous Integration Matrix (`.github/workflows/ci.yml`):** Parallel GitHub Actions workflow matrix validating POSIX linting, plugin manifest schemas, and Tier 1 Golden Benchmark evaluations across `ubuntu-latest`, `macos-latest`, and `windows-latest`.
+* **Multi-Engine In-Matrix Fallback Verification:** Automated CI loop on Ubuntu asserting functional equivalence and deterministic state persistence across `jq`, `python3`, and `node` fallback JSON engines.
+* **Workflow Concurrency & Least Privilege Security:** Top-level `permissions: contents: read` enforcement and PR-scoped `cancel-in-progress` concurrency grouping to eliminate stale runner queue congestion.
+* **Live Repository Status Badge:** Embedded CI status badge in `README.md` linked to the multi-platform test pipeline.
+* **Formal Branch Protection Contract:** Documented 4 required CI status checks and protected `main` branch policy in `CONTRIBUTING.md`.
+
+#### Fixed & Hardened
+* **POSIX Portability & Zero-Warning ShellCheck Compliance:** Refactored all scripts in `bin/` to achieve zero warnings at `--severity=warning` under native ShellCheck (resolved SC2034, SC2155 variable masking, shadowed identifiers, and subshell quoting).
+* **Cross-Platform Engine Whitelisting & Fail-Closed Guard:** Enforced whitelist filtering (`jq|python3|python|node|node.exe`) in `bin/_paths.sh` and implemented fail-closed fatal error branches in `bin/record-telemetry.sh`.
+* **Dual-Mode Path Resolver Dispatcher:** Enabled direct CLI execution of `bin/_paths.sh` (`resolve_json_engine`, `resolve_state_root`, `resolve_workspace_root`) alongside native sourcing support.
+* **Deterministic Platform & Preflight Probing:** Standardized host platform classification on `uname -s` pattern-matching (`MINGW*|MSYS*|CYGWIN*`), eliminated `$OSTYPE` subshell fragility, added 1-click package manager install recommendations for `git`, and decoupled contextual `gh auth` remote checks from offline sandbox evaluation modes (`DEMO`, `--file`, `--prompt`).
+
 
