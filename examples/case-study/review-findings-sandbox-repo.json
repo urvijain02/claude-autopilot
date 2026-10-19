@@ -1,0 +1,17 @@
+{
+  "repo": "sandbox-repo",
+  "iteration": 1,
+  "verdict": "BLOCKING",
+  "summary": "Negative options.page yields negative start index and unexpected trailing slice.",
+  "findings": [
+    {
+      "id": "FINDING-1",
+      "severity": "blocking",
+      "file": "src/paginate.js",
+      "line": 12,
+      "summary": "Negative options.page yields negative startIndex resulting in backwards array slice",
+      "rationale": "Passing options.page = -1 parses to -1, evaluating truthy and bypassing the '|| 1' fallback. This sets startIndex to -20, causing slice(-20, -10) to extract trailing elements from the end of the collection rather than defaulting to page 1.",
+      "confidence": "high"
+    }
+  ]
+}

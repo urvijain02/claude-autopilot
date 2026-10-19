@@ -110,6 +110,9 @@ The orchestrator operates as a discrete finite-state machine (FSM), executing a 
 
 All pipeline communications occur through disk-backed JSON files stored under `$STATE` (`~/.claude/autopilot/state/<TICKET>/`). Subagents receive explicit read-only or write-only boundaries.
 
+> [!TIP]
+> **Reference Run Artifacts:** For a complete, production-tested execution transcript featuring authentic serialized examples of all schemas documented below, see the [PROJ-1001 Case Study](../examples/case-study/).
+
 ### 3.1 `state.json` (Orchestrator Source of Truth)
 
 Authored and updated exclusively by the orchestrator at every state transition. Serves as the durable finite-state machine memory:

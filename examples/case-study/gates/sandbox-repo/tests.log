@@ -1,0 +1,17 @@
+> sandbox-repo@1.0.0 test
+> node --test
+
+✔ paginate - returns first page of items with correct defaults (1.0219ms)
+✔ paginate - correctly handles last page with exact remainder (0.189ms)
+✔ paginate - correctly handles exact multiple of pageSize (PROJ-1001 AC1) (0.1614ms)
+✔ paginate - clamps negative page numbers to page 1 (0.1507ms)
+✔ paginate - handles out-of-range page gracefully with empty items (0.1525ms)
+✔ paginate - handles empty or non-array inputs (0.1178ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 124.8556

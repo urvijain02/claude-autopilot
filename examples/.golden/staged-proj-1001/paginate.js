@@ -9,7 +9,7 @@
  */
 function paginate(items, options = {}) {
   const source = Array.isArray(items) ? items : [];
-  const page = Math.max(1, parseInt(options.page, 10) || 1);
+  const page = parseInt(options.page, 10) || 1;
   const pageSize = Math.max(1, parseInt(options.pageSize, 10) || 10);
 
   const totalItems = source.length;

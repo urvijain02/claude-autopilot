@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [1.0.0] - 2026-10-19
 
 ### Phase 1: Autonomous Pipeline Core & State Architecture
 
@@ -80,4 +80,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * **Dual-Mode Path Resolver Dispatcher:** Enabled direct CLI execution of `bin/_paths.sh` (`resolve_json_engine`, `resolve_state_root`, `resolve_workspace_root`) alongside native sourcing support.
 * **Deterministic Platform & Preflight Probing:** Standardized host platform classification on `uname -s` pattern-matching (`MINGW*|MSYS*|CYGWIN*`), eliminated `$OSTYPE` subshell fragility, added 1-click package manager install recommendations for `git`, and decoupled contextual `gh auth` remote checks from offline sandbox evaluation modes (`DEMO`, `--file`, `--prompt`).
 
+---
 
+### Phase 6: Showcase Artifacts & Case Study
+
+#### Added
+* **Animated Terminal SVG Demo (`docs/demo.svg`):** Self-contained, lightweight animated SVG terminal recording embedded in `README.md` demonstrating sandbox staging, TDD Red Gate failure, Green Gate pass, adversarial code review, and completion telemetry with zero external video dependencies.
+* **Execution Case Study (`examples/case-study/`):** Complete, reproducible execution transcript on `PROJ-1001` (Boundary Regression Slicing) adhering to RFC-001 State Protocol, capturing the full ticket-to-PR lifecycle across requirement intake, TDD Red Gate verification, green implementation, adversarial review triage, and prompt cache telemetry.
+* **Developer Hygiene Rules (`.gitignore`):** Appended common developer configuration ignores (`.env*`, `.vscode/`, `.idea/`, `*.swp`) to prevent accidental credential and editor metadata leakage.
+
+#### Fixed & Hardened
+* **State Protocol Harmonization:** Standardized review findings naming to `review-findings-<label>.json` with iteration tracking, and standardized the execution log to the protocol-mandated `log.md` schema.
+* **Benchmark Invariant Alignment:** Synchronized `examples/.golden/staged-proj-1001/` and reference test suites with `docs/EVALS.md` (§2.3 & §3.1) formalizing the dual role of `PROJ-1001` as both a clean baseline evaluation and a full review-fix cycle case study.

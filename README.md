@@ -6,6 +6,10 @@
 [![Platform: Claude Code | Universal](https://img.shields.io/badge/Platform-Claude_Code_%7C_Universal-blue)](#architecture--state-machine)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
+<p align="center">
+  <img src="docs/demo.svg" alt="Claude Autopilot SWE-Agent Terminal Demo" width="100%">
+</p>
+
 Takes a Jira ticket or GitHub issue through to open pull requests without supervision.
 
 Failing tests are written before the production change, stage outcomes are decided by shell scripts rather than by the model reading its own work, and the review is done by a separate agent on a stronger model tier than the one that wrote the code — then looped through analyze and fix. At the iteration cap it escalates if anything blocking survives, and ships with the leftovers recorded if only minor findings remain.
@@ -53,6 +57,17 @@ Stage a benchmark task in its initial broken state, then launch Claude Autopilot
 
 > **What this executes:** Benchmarks the 3 Golden Benchmark tasks (`PROJ-1001` boundary slicing, `PROJ-1002` auth token clock-skew invariant, and `PROJ-1003` multi-repo contract coordination) against bundled sandboxes using native `node:test`, executing real `gate-build.sh` and `gate-tests.sh` quality gates and asserting un-fakeable central JSON verdicts. See [RFC-002: Evaluation Protocol](docs/EVALS.md).
 
+### Tier 3: Zero-Install Case Study Walkthrough
+
+Want to inspect authentic, un-fakeable run artifacts without cloning or running locally? Browse the complete, frozen execution transcript in [`examples/case-study/`](examples/case-study/):
+* [`log.md`](examples/case-study/log.md) — Complete 14-stage append-only execution log with stage elapsed times, decisions, and quality gate outputs.
+* [`requirements.md`](examples/case-study/requirements.md) & [`test-plan.md`](examples/case-study/test-plan.md) — Pre-implementation engineering plans authored by Claude Sonnet.
+* [`review-findings-sandbox-repo.json`](examples/case-study/review-findings-sandbox-repo.json) — Real adversarial review finding flagged by Claude Opus catching negative-index array slicing.
+* [`fix-list-sandbox-repo.json`](examples/case-study/fix-list-sandbox-repo.json) — Structured Review Analyst remediation decisions translating findings into fixer actions.
+* [`gates/sandbox-repo/`](examples/case-study/gates/sandbox-repo/) — Verifiable exit-code JSON payloads ([`build.json`](examples/case-study/gates/sandbox-repo/build.json), [`tests.json`](examples/case-study/gates/sandbox-repo/tests.json)) and raw terminal execution streams ([`build.log`](examples/case-study/gates/sandbox-repo/build.log), [`tests.log`](examples/case-study/gates/sandbox-repo/tests.log)).
+* [`telemetry.json`](examples/case-study/telemetry.json) — AI token accounting and stage latencies (**84.5% prompt cache efficiency**, $0.14 execution cost).
+* [`final-pr-diff.patch`](examples/case-study/final-pr-diff.patch) — Surgical patch (+27, −5 across 2 files) resolving both boundary defect and negative page clamping.
+
 ---
 
 ## Architecture & State Machine
@@ -91,7 +106,7 @@ flowchart TD
         Review -->|Blocking at Cap| Escalate["Escalate to Human"]
 
         %% Fix Loop on the right (directly aligned with GreenGate)
-        Review -->|Findings| Findings["review-findings.json*"]
+        Review -->|Findings| Findings["review-findings-&lt;label&gt;.json*"]
         Findings --> Triage["Review Analyst*"]
         Triage --> Fixer["Targeted Fixer*"]
     end

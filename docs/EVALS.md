@@ -69,7 +69,7 @@ To prevent LLM sycophancy (models approving their own flawed code), the review e
 Measures the efficiency of the feedback loop between the implementer (Sonnet), reviewer (Opus), analyst (Sonnet), and fixer (Sonnet). 
 
 Iteration requirements scale with task complexity:
-* **Simple Bugfixes (e.g. PROJ-1001):** Expected to resolve at **Iteration 0 (Pass@1)** with minimal diff footprint.
+* **Simple Bugfixes (e.g. PROJ-1001):** Expected to resolve at **Iteration 0 (Pass@1)** with minimal diff footprint (or **Iteration 1** when adversarial review flags unhandled edge-case boundaries).
 * **Security & Invariants (e.g. PROJ-1002):** Expected to resolve within **1 iteration** (flaw caught by adversarial review and resolved on the first targeted fix cycle).
 * **Multi-Repo Coordination (e.g. PROJ-1003):** Expected to resolve within **1 to 2 iterations** across coordinated worktrees.
 * **Hard Escalation:** Any task that cannot reach a `CLEAN` or `NON_BLOCKING` verdict within 3 iterations stops and escalates to human review.
@@ -101,7 +101,7 @@ The evaluation suite defines three representative golden tasks bundled directly 
 
 | Benchmark ID | Category | Complexity | Target Invariants Tested | Sample Ticket |
 |---|---|---|---|---|
-| **PROJ-1001** | Boundary Regression | Single-Repo | TDD Red Gate, minimal diff footprint, Pass@1 resolution. | [`examples/sample-ticket-proj-1001.md`](../examples/sample-ticket-proj-1001.md) |
+| **PROJ-1001** | Boundary Regression | Single-Repo | TDD Red Gate, minimal diff footprint, Pass@1 resolution or Iteration 1 adversarial review boundary triage (detailed in [`examples/case-study/`](../examples/case-study/)). | [`examples/sample-ticket-proj-1001.md`](../examples/sample-ticket-proj-1001.md) |
 | **PROJ-1002** | Security & Auth Validation | Single-Repo | Injected token expiry bypass; target Opus reviewer recall: 100% detection, fix loop convergence at iteration 1. | [`examples/sample-ticket-proj-1002.md`](../examples/sample-ticket-proj-1002.md) |
 | **PROJ-1003** | Contract Update | Multi-Repo | API microservice schema addition + consumer library deserializer update; isolated clones, sibling PR cross-linking. | [`examples/sample-ticket-proj-1003.md`](../examples/sample-ticket-proj-1003.md) |
 

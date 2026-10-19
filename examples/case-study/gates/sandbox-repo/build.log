@@ -1,0 +1,2 @@
+> sandbox-repo@1.0.0 typecheck
+> node --check src/paginate.js src/token-verifier.js src/schema-validator.js test/paginate.test.js test/token-verifier.test.js test/schema-validator.test.js

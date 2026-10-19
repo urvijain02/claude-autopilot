@@ -1,0 +1,60 @@
+diff --git a/src/paginate.js b/src/paginate.js
+index 9f69da4..ab80d82 100644
+--- a/src/paginate.js
++++ b/src/paginate.js
+@@ -9,7 +9,7 @@
+  */
+ function paginate(items, options = {}) {
+   const source = Array.isArray(items) ? items : [];
+-  const page = parseInt(options.page, 10) || 1;
++  const page = Math.max(1, parseInt(options.page, 10) || 1);
+   const pageSize = Math.max(1, parseInt(options.pageSize, 10) || 10);
+ 
+   const totalItems = source.length;
+@@ -17,10 +17,7 @@ function paginate(items, options = {}) {
+   const startIndex = (page - 1) * pageSize;
+   const endIndex = Math.min(startIndex + pageSize, totalItems);
+ 
+-  // BUG (PROJ-1001): exact multiple on last page returns empty array
+-  const pagedItems = (page >= totalPages && totalItems % pageSize === 0 && page > 1)
+-    ? []
+-    : (startIndex >= totalItems ? [] : source.slice(startIndex, endIndex));
++  const pagedItems = startIndex >= totalItems ? [] : source.slice(startIndex, endIndex);
+ 
+   return {
+     items: pagedItems,
+diff --git a/test/paginate.test.js b/test/paginate.test.js
+index 8b40b3a..ab44235 100644
+--- a/test/paginate.test.js
++++ b/test/paginate.test.js
+@@ -28,6 +28,30 @@ test('paginate - correctly handles last page with exact remainder', () => {
+   assert.strictEqual(result.hasPrev, true);
+ });
+ 
++test('paginate - correctly handles exact multiple of pageSize (PROJ-1001 AC1)', () => {
++  const items = Array.from({ length: 20 }, (_, i) => `item-${i + 1}`);
++  const result = paginate(items, { page: 2, pageSize: 10 });
++
++  assert.strictEqual(result.totalItems, 20);
++  assert.strictEqual(result.totalPages, 2);
++  assert.strictEqual(result.currentPage, 2);
++  assert.strictEqual(result.items.length, 10);
++  assert.strictEqual(result.items[0], 'item-11');
++  assert.strictEqual(result.items[9], 'item-20');
++  assert.strictEqual(result.hasNext, false);
++  assert.strictEqual(result.hasPrev, true);
++});
++
++test('paginate - clamps negative page numbers to page 1', () => {
++  const items = ['a', 'b', 'c'];
++  const result = paginate(items, { page: -1, pageSize: 2 });
++
++  assert.strictEqual(result.currentPage, 1);
++  assert.strictEqual(result.items.length, 2);
++  assert.strictEqual(result.items[0], 'a');
++  assert.strictEqual(result.items[1], 'b');
++});
++
+ test('paginate - handles out-of-range page gracefully with empty items', () => {
+   const items = ['a', 'b', 'c'];
+   const result = paginate(items, { page: 99, pageSize: 10 });

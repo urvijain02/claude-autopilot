@@ -1,0 +1,175 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 580" width="100%" height="100%">
+  <defs>
+    <style>
+      @keyframes blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+      @keyframes showL1 { 0%, 4% { opacity: 0; } 5%, 95% { opacity: 1; } 96%, 100% { opacity: 0; } }
+      @keyframes showL2 { 0%, 10% { opacity: 0; } 11%, 95% { opacity: 1; } 96%, 100% { opacity: 0; } }
+      @keyframes showL3 { 0%, 15% { opacity: 0; } 16%, 95% { opacity: 1; } 96%, 100% { opacity: 0; } }
+      @keyframes showL4 { 0%, 22% { opacity: 0; } 23%, 95% { opacity: 1; } 96%, 100% { opacity: 0; } }
+      @keyframes showL5 { 0%, 28% { opacity: 0; } 29%, 95% { opacity: 1; } 96%, 100% { opacity: 0; } }
+      @keyframes showL6 { 0%, 34% { opacity: 0; } 35%, 95% { opacity: 1; } 96%, 100% { opacity: 0; } }
+      @keyframes showL7 { 0%, 41% { opacity: 0; } 42%, 95% { opacity: 1; } 96%, 100% { opacity: 0; } }
+      @keyframes showL8 { 0%, 48% { opacity: 0; } 49%, 95% { opacity: 1; } 96%, 100% { opacity: 0; } }
+      @keyframes showL9 { 0%, 55% { opacity: 0; } 56%, 95% { opacity: 1; } 96%, 100% { opacity: 0; } }
+      @keyframes showL10 { 0%, 62% { opacity: 0; } 63%, 95% { opacity: 1; } 96%, 100% { opacity: 0; } }
+      @keyframes showL11 { 0%, 68% { opacity: 0; } 69%, 95% { opacity: 1; } 96%, 100% { opacity: 0; } }
+      @keyframes showBanner { 0%, 74% { opacity: 0; } 75%, 95% { opacity: 1; } 96%, 100% { opacity: 0; } }
+      @keyframes showHarness { 0%, 82% { opacity: 0; } 83%, 95% { opacity: 1; } 96%, 100% { opacity: 0; } }
+
+      .term-bg { fill: #0d1117; }
+      .term-header { fill: #161b22; }
+      .term-border { stroke: #30363d; stroke-width: 1; }
+      .term-title { fill: #8b949e; font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; font-size: 12px; font-weight: 500; }
+      .text { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; font-size: 13px; font-weight: 400; }
+      .prompt { fill: #58a6ff; font-weight: 600; }
+      .cmd { fill: #f0f6fc; font-weight: 600; }
+      .dim { fill: #8b949e; }
+      .green { fill: #3fb950; font-weight: 600; }
+      .yellow { fill: #d29922; font-weight: 600; }
+      .red { fill: #f85149; font-weight: 600; }
+      .cyan { fill: #39c5cf; }
+      .purple { fill: #bc8cff; }
+      .bold { font-weight: 700; fill: #ffffff; }
+      .cursor { fill: #58a6ff; animation: blink 1s infinite; }
+
+      .l1 { animation: showL1 14s infinite; }
+      .l2 { animation: showL2 14s infinite; }
+      .l3 { animation: showL3 14s infinite; }
+      .l4 { animation: showL4 14s infinite; }
+      .l5 { animation: showL5 14s infinite; }
+      .l6 { animation: showL6 14s infinite; }
+      .l7 { animation: showL7 14s infinite; }
+      .l8 { animation: showL8 14s infinite; }
+      .l9 { animation: showL9 14s infinite; }
+      .l10 { animation: showL10 14s infinite; }
+      .l11 { animation: showL11 14s infinite; }
+      .banner { animation: showBanner 14s infinite; }
+      .harness { animation: showHarness 14s infinite; }
+    </style>
+  </defs>
+
+  <!-- Terminal Window Chrome -->
+  <rect x="1" y="1" width="878" height="578" rx="10" ry="10" class="term-bg term-border" />
+  <path d="M 1 10 C 1 5 5 1 10 1 L 870 1 C 875 1 879 5 879 10 L 879 38 L 1 38 Z" class="term-header" />
+  <line x1="1" y1="38" x2="879" y2="38" stroke="#30363d" stroke-width="1" />
+
+  <!-- Window Buttons -->
+  <circle cx="22" cy="19" r="6" fill="#ff5f56" />
+  <circle cx="42" cy="19" r="6" fill="#ffbd2e" />
+  <circle cx="62" cy="19" r="6" fill="#27c93f" />
+
+  <!-- Title -->
+  <text x="440" y="24" text-anchor="middle" class="term-title">claude-autopilot — bash — 880x580</text>
+
+  <!-- Terminal Content -->
+  <g transform="translate(26, 68)">
+    <!-- Line 1: Reset Sandbox -->
+    <g class="l1">
+      <text y="0" class="text">
+        <tspan class="prompt">engineer@autopilot</tspan><tspan class="dim">:</tspan><tspan class="cyan">~/workspace</tspan><tspan class="dim">$ </tspan><tspan class="cmd">./bin/reset-sandbox.sh PROJ-1001</tspan>
+      </text>
+    </g>
+
+    <!-- Line 2: Sandbox Staging Output -->
+    <g class="l2">
+      <text y="22" class="text dim">Staging examples/sandbox-repo to broken defect state (PROJ-1001)...</text>
+      <text y="42" class="text green">✔ Sandbox staged: src/paginate.js line 21 exact-multiple bug active.</text>
+    </g>
+
+    <!-- Line 3: Autopilot Engage Command -->
+    <g class="l3">
+      <text y="70" class="text">
+        <tspan class="prompt">engineer@autopilot</tspan><tspan class="dim">:</tspan><tspan class="cyan">~/workspace</tspan><tspan class="dim">$ </tspan><tspan class="cmd">/autopilot:engage PROJ-1001 --file examples/sample-ticket-proj-1001.md</tspan>
+      </text>
+    </g>
+
+    <!-- Line 4: Stage 0 Preflight -->
+    <g class="l4">
+      <text y="94" class="text">
+        <tspan class="bold">PROJ-1001</tspan><tspan class="dim"> · </tspan><tspan class="cyan">preflight</tspan><tspan class="dim"> · </tspan><tspan class="green">all 7 checks pass</tspan><tspan class="dim"> (node:test, git, clean tree) · 1s</tspan>
+      </text>
+    </g>
+
+    <!-- Line 5: Stage 4 TDD Red Gate -->
+    <g class="l5">
+      <text y="116" class="text">
+        <tspan class="bold">PROJ-1001</tspan><tspan class="dim"> · </tspan><tspan class="cyan">write-tests</tspan><tspan class="dim"> · </tspan><tspan class="purple">sandbox-repo</tspan><tspan class="dim"> · </tspan><tspan class="green">Red Gate: exit 1</tspan><tspan class="dim"> (touched_a_test: true, 4 pass, 1 fail) · 8s</tspan>
+      </text>
+    </g>
+
+    <!-- Line 6: Stage 5 Green Implementation Gate -->
+    <g class="l6">
+      <text y="138" class="text">
+        <tspan class="bold">PROJ-1001</tspan><tspan class="dim"> · </tspan><tspan class="cyan">implement</tspan><tspan class="dim"> · </tspan><tspan class="purple">sandbox-repo</tspan><tspan class="dim"> · patched src/paginate.js · </tspan><tspan class="green">gates: build PASS, tests PASS (5/5)</tspan><tspan class="dim"> · 14s</tspan>
+      </text>
+    </g>
+
+    <!-- Line 7: Stage 6 Opus Adversarial Review Finding -->
+    <g class="l7">
+      <text y="160" class="text">
+        <tspan class="bold">PROJ-1001</tspan><tspan class="dim"> · </tspan><tspan class="cyan">review</tspan><tspan class="dim"> · </tspan><tspan class="purple">sandbox-repo</tspan><tspan class="dim"> · </tspan><tspan class="bold">claude-opus</tspan><tspan class="dim"> · </tspan><tspan class="yellow">verdict BLOCKING</tspan><tspan class="dim"> (FINDING-1: negative page slice) · 6s</tspan>
+      </text>
+    </g>
+
+    <!-- Line 8: Stage 7 & 8 Triage & Fixer Convergence -->
+    <g class="l8">
+      <text y="182" class="text">
+        <tspan class="bold">PROJ-1001</tspan><tspan class="dim"> · </tspan><tspan class="cyan">analyze</tspan><tspan class="dim"> · </tspan><tspan class="purple">sandbox-repo</tspan><tspan class="dim"> · accepted FINDING-1 · wrote fix-list-sandbox-repo.json · 2s</tspan>
+      </text>
+      <text y="204" class="text">
+        <tspan class="bold">PROJ-1001</tspan><tspan class="dim"> · </tspan><tspan class="cyan">fix</tspan><tspan class="dim"> · </tspan><tspan class="purple">sandbox-repo</tspan><tspan class="dim"> · clamped Math.max(1, page) · </tspan><tspan class="green">gates: build PASS, tests PASS (6/6)</tspan><tspan class="dim"> · 4s</tspan>
+      </text>
+    </g>
+
+    <!-- Line 9: Stage 9 & 10 Commit and Delivery -->
+    <g class="l9">
+      <text y="226" class="text">
+        <tspan class="bold">PROJ-1001</tspan><tspan class="dim"> · </tspan><tspan class="cyan">commit</tspan><tspan class="dim"> · </tspan><tspan class="purple">sandbox-repo</tspan><tspan class="dim"> · authored commit with Co-Authored-By trailers · 1s</tspan>
+      </text>
+      <text y="248" class="text">
+        <tspan class="bold">PROJ-1001</tspan><tspan class="dim"> · </tspan><tspan class="cyan">ticket-updates</tspan><tspan class="dim"> · opened PR #101 · Slack notified · Jira: In Review · 3s</tspan>
+      </text>
+    </g>
+
+    <!-- Final Finish Banner -->
+    <g class="banner" transform="translate(0, 274)">
+      <line x1="0" y1="0" x2="828" y2="0" stroke="#30363d" stroke-width="1" />
+      <text y="22" class="text">
+        <tspan class="green">PROJ-1001</tspan><tspan class="green">  ✓ done</tspan><tspan class="dim"> · total </tspan><tspan class="bold">52s</tspan>
+      </text>
+      <text y="42" class="text">
+        <tspan class="dim"> repos    </tspan><tspan class="bold">sandbox-repo</tspan><tspan class="dim"> (bugfix/PROJ-1001-fix-pagination-boundary)  </tspan><tspan class="green">+27</tspan><tspan class="dim"> </tspan><tspan class="red">−5</tspan><tspan class="dim"> · 2 files</tspan>
+      </text>
+      <text y="62" class="text">
+        <tspan class="dim"> gates    tests: </tspan><tspan class="green">pass (6/6)</tspan><tspan class="dim"> · build: </tspan><tspan class="green">pass</tspan>
+      </text>
+      <text y="82" class="text">
+        <tspan class="dim"> review   </tspan><tspan class="green">clean</tspan><tspan class="dim"> · </tspan><tspan class="cyan">1 iteration(s)</tspan><tspan class="dim"> (Opus adversarial triage verified)</tspan>
+      </text>
+      <text y="102" class="text">
+        <tspan class="dim"> telemetry plan: </tspan><tspan class="cyan">14s</tspan><tspan class="dim"> · tdd: </tspan><tspan class="cyan">22s</tspan><tspan class="dim"> · review: </tspan><tspan class="cyan">16s</tspan>
+      </text>
+      <text y="122" class="text">
+        <tspan class="dim"> tokens   </tspan><tspan class="bold">59.4k in</tspan><tspan class="dim"> (</tspan><tspan class="green">84.5% cache hit</tspan><tspan class="dim">) · </tspan><tspan class="bold">6.2k out</tspan><tspan class="dim"> · </tspan><tspan class="purple">65.6k total tok</tspan>
+      </text>
+      <text y="142" class="text">
+        <tspan class="dim"> PR       </tspan><tspan class="cyan">#101</tspan><tspan class="dim"> (opened via gh pr create) · </tspan><tspan class="dim">jira: </tspan><tspan class="yellow">In Review</tspan><tspan class="dim"> · </tspan><tspan class="dim">slack: </tspan><tspan class="green">posted</tspan>
+      </text>
+      <line x1="0" y1="156" x2="828" y2="156" stroke="#30363d" stroke-width="1" />
+    </g>
+
+    <!-- Verification Harness Proof -->
+    <g class="harness" transform="translate(0, 452)">
+      <text y="0" class="text">
+        <tspan class="prompt">engineer@autopilot</tspan><tspan class="dim">:</tspan><tspan class="cyan">~/workspace</tspan><tspan class="dim">$ </tspan><tspan class="cmd">./bin/run-evals.sh all</tspan>
+      </text>
+      <text y="22" class="text">
+        <tspan class="green">ALL GOLDEN BENCHMARKS &amp; QUALITY GATES VERIFIED (all)</tspan>
+      </text>
+      <text y="42" class="text">
+        <tspan class="dim">Gates: </tspan><tspan class="green">3/3 PASS</tspan><tspan class="dim">  ·  Telemetry: </tspan><tspan class="green">3/3 PASS</tspan><tspan class="dim">  ·  </tspan><tspan class="green">Zero Defect</tspan><tspan class="dim">  ·  Status: </tspan><tspan class="bold">READY</tspan>
+        <tspan class="cursor">█</tspan>
+      </text>
+    </g>
+  </g>
+</svg>

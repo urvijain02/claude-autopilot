@@ -1,8 +1,25 @@
+# OS & System artifacts
 .DS_Store
 Thumbs.db
 *.log
+!examples/case-study/**/*.log
+
+# Claude & Autopilot runtime
 .claude/
+
+# Node & package dependencies
 node_modules/
+
+# .NET compilation artifacts
 obj/
 bin/Debug/
 bin/Release/
+
+# Environment & local credentials
+.env
+.env.*
+
+# IDE & Editor configuration
+.vscode/
+.idea/
+*.swp

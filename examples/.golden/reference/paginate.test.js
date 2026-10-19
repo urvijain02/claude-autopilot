@@ -42,6 +42,16 @@ test('paginate - correctly handles exact multiple of pageSize (PROJ-1001 AC1)', 
   assert.strictEqual(result.hasPrev, true);
 });
 
+test('paginate - clamps negative page numbers to page 1', () => {
+  const items = ['a', 'b', 'c'];
+  const result = paginate(items, { page: -1, pageSize: 2 });
+
+  assert.strictEqual(result.currentPage, 1);
+  assert.strictEqual(result.items.length, 2);
+  assert.strictEqual(result.items[0], 'a');
+  assert.strictEqual(result.items[1], 'b');
+});
+
 test('paginate - handles out-of-range page gracefully with empty items', () => {
   const items = ['a', 'b', 'c'];
   const result = paginate(items, { page: 99, pageSize: 10 });

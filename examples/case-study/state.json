@@ -1,0 +1,28 @@
+{
+  "ticket": "PROJ-1001",
+  "summary": "Fix Pagination Boundary Slicing for Exact Multiples of PageSize",
+  "issue_type": "Bug",
+  "slug": "fix-pagination-boundary",
+  "jira_status": "In Review",
+  "slack_link": "https://slack.com/archives/C01234567/p1697456789000100",
+  "repos": [
+    {
+      "name": "sandbox-repo",
+      "role": "primary",
+      "remote": "urvijain02/claude-autopilot",
+      "path": "examples/sandbox-repo",
+      "stack": "node",
+      "branch": "bugfix/PROJ-1001-fix-pagination-boundary",
+      "branch_base": "main",
+      "gates": {
+        "tests": "pass",
+        "build": "pass"
+      },
+      "pr_url": "https://github.com/urvijain02/claude-autopilot/pull/101"
+    }
+  ],
+  "phase": "done",
+  "iteration": 1,
+  "max_iterations": 3,
+  "updated_at": "2026-10-18T14:22:15Z"
+}
