@@ -297,6 +297,9 @@ def generate_svg_chart(
         xc = x_coord(i)
         dots.append(f'  <circle cx="{xc:.1f}" cy="{y_coord(val_series[i]):.1f}" r="3" fill="{val_color}"/>')
         dots.append(f'  <circle cx="{xc:.1f}" cy="{y_coord(unq_series[i]):.1f}" r="3" fill="{unq_color}"/>')
+    safe_title = title.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    safe_val_label = val_label.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    safe_unq_label = unq_label.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
     return f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" width="{width}" height="{height}">
   <defs>
@@ -314,13 +317,13 @@ def generate_svg_chart(
   <rect width="{width}" height="{height}" fill="#0d1117" rx="8" stroke="#30363d" stroke-width="1"/>
 
   <!-- Chart Title -->
-  <text x="{margin_left}" y="32" fill="#f0f6fc" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="14" font-weight="600">{title}</text>
+  <text x="{margin_left}" y="32" fill="#f0f6fc" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="14" font-weight="600">{safe_title}</text>
 
   <!-- Legend -->
   <circle cx="{width - 240}" cy="28" r="4.5" fill="{val_color}"/>
-  <text x="{width - 230}" y="32" fill="#c9d1d9" font-family="-apple-system,sans-serif" font-size="12">{val_label}</text>
+  <text x="{width - 230}" y="32" fill="#c9d1d9" font-family="-apple-system,sans-serif" font-size="12">{safe_val_label}</text>
   <circle cx="{width - 120}" cy="28" r="4.5" fill="{unq_color}"/>
-  <text x="{width - 110}" y="32" fill="#c9d1d9" font-family="-apple-system,sans-serif" font-size="12">{unq_label}</text>
+  <text x="{width - 110}" y="32" fill="#c9d1d9" font-family="-apple-system,sans-serif" font-size="12">{safe_unq_label}</text>
 
   <!-- Grid Lines -->
 {chr(10).join(y_grid_lines)}
@@ -436,9 +439,13 @@ flowchart LR
 ---
 
 ## 📉 Views & Visitor Trends
+
 ![Views Trend](views-chart.svg)
 
+---
+
 ## 📦 Git Clones Trend
+
 ![Clones Trend](clones-chart.svg)
 
 ---
