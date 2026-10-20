@@ -298,7 +298,7 @@ def generate_svg_chart(
         dots.append(f'  <circle cx="{xc:.1f}" cy="{y_coord(val_series[i]):.1f}" r="3" fill="{val_color}"/>')
         dots.append(f'  <circle cx="{xc:.1f}" cy="{y_coord(unq_series[i]):.1f}" r="3" fill="{unq_color}"/>')
 
-    return f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" width="100%" height="100%">
+    return f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" width="{width}" height="{height}">
   <defs>
     <linearGradient id="valGrad" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="{val_color}" stop-opacity="0.30"/>
@@ -405,22 +405,21 @@ def render_dashboard(views_rows: list, clones_rows: list, referrers_rows: list, 
 This branch (`traffic-data`) permanently archives repository telemetry, overcoming GitHub's 14-day rolling window deletion policy. All time-series data is persisted exclusively to this orphan branch, keeping `main` 100% clean.
 
 ```mermaid
-flowchart TD
+flowchart LR
     subgraph Main_Branch["1. Main Branch (main)"]
-        WF[".github/workflows/traffic-archive.yml\\n• Workflow definition file\\n• Triggers nightly schedule"]
+        WF[".github/workflows/traffic-archive.yml\\n• Cron (00:15 UTC)\\n• workflow_dispatch"]
     end
 
-    subgraph GitHub_Runner["2. GitHub Actions Runner"]
-        Cron["Cron Schedule (00:15 UTC)\\n& workflow_dispatch"] -->|Triggers| WF
-        WF --> API["GitHub Traffic REST API\\n(views, clones, referrers, paths)"]
-        API --> Runner["Process Data & Render SVGs"]
+    subgraph Actions_Runner["2. Ephemeral Runner"]
+        API["Query Traffic API"] --> Process["Merge CSVs\\n& Render SVGs"]
     end
 
     subgraph Orphan_Branch["3. Orphan Branch (traffic-data)"]
-        Data["traffic/views.csv\\ntraffic/clones.csv\\nviews-chart.svg\\nclones-chart.svg\\nREADME.md (Dashboard)\\n• 0 commits on main\\n• Permanent analytics store"]
+        Data["traffic-data\\n• *.csv & *.json\\n• *.svg charts\\n• README.md\\n• 0 commits on main"]
     end
 
-    Runner -->|Pushes ONLY to| Data
+    WF -->|1. Spawns| API
+    Process -->|2. Pushes ONLY to| Data
 ```
 
 ---
