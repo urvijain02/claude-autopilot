@@ -1,6 +1,6 @@
 # 📊 Claude Autopilot — Traffic & Adoption Dashboard
 
-*Last updated: 2026-10-20 10:45 UTC*
+*Last updated: 2026-10-20 11:16 UTC*
 
 This branch (`traffic-data`) permanently archives repository telemetry, overcoming GitHub's 14-day rolling window deletion policy. All time-series data is persisted exclusively to this orphan branch, keeping `main` 100% clean.
 
@@ -36,9 +36,13 @@ flowchart LR
 ---
 
 ## 📉 Views & Visitor Trends
+
 ![Views Trend](views-chart.svg)
 
+---
+
 ## 📦 Git Clones Trend
+
 ![Clones Trend](clones-chart.svg)
 
 ---
