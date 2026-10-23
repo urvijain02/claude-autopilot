@@ -1,6 +1,6 @@
 # 📊 Claude Autopilot — Traffic & Adoption Dashboard
 
-*Last updated: 2026-10-22 04:36 UTC*
+*Last updated: 2026-10-23 04:41 UTC*
 
 This branch (`traffic-data`) permanently archives repository telemetry, overcoming GitHub's 14-day rolling window deletion policy. All time-series data is persisted exclusively to this orphan branch, keeping `main` 100% clean.
 
@@ -30,8 +30,8 @@ flowchart LR
 | :--- | :--- |
 | **Total Page Views** | 78 |
 | **Cumulative Daily Uniques** | 5 |
-| **Total Git Clones** | 94 |
-| **Unique Git Cloners** | 35 |
+| **Total Git Clones** | 110 |
+| **Unique Git Cloners** | 45 |
 
 ---
 
@@ -59,21 +59,21 @@ flowchart LR
 
 | Document / Path | Page Views | Unique Readers |
 | :--- | :--- | :--- |
-| **/pulls** (`/urvijain02/claude-autopilot/pulls`) | 14 | 3 |
-| **/pull/2** (`/urvijain02/claude-autopilot/pull/2`) | 9 | 3 |
-| **/actions** (`/urvijain02/claude-autopilot/actions`) | 5 | 1 |
-| **/pull/4** (`/urvijain02/claude-autopilot/pull/4`) | 5 | 1 |
-| **/actions/runs/39072240583/job/117512071539** (`/urvijain02/claude-autopilot/actions/runs/39072240583/job/117512071539`) | 3 | 3 |
-| **/actions/runs/39072240583/job/117512071719** (`/urvijain02/claude-autopilot/actions/runs/39072240583/job/117512071719`) | 3 | 3 |
-| **/actions/workflows/traffic-archive.yml** (`/urvijain02/claude-autopilot/actions/workflows/traffic-archive.yml`) | 3 | 1 |
+| **/pulls** (`/urvijain02/claude-autopilot/pulls`) | 22 | 4 |
+| **/pull/2** (`/urvijain02/claude-autopilot/pull/2`) | 12 | 4 |
+| **/actions** (`/urvijain02/claude-autopilot/actions`) | 10 | 2 |
+| **/pull/4** (`/urvijain02/claude-autopilot/pull/4`) | 10 | 2 |
+| **/actions/workflows/traffic-archive.yml** (`/urvijain02/claude-autopilot/actions/workflows/traffic-archive.yml`) | 6 | 2 |
+| **/actions/runs/39072240583/job/117512071539** (`/urvijain02/claude-autopilot/actions/runs/39072240583/job/117512071539`) | 4 | 4 |
+| **/actions/runs/39072240583/job/117512071719** (`/urvijain02/claude-autopilot/actions/runs/39072240583/job/117512071719`) | 4 | 4 |
 | **/activity** (`/urvijain02/claude-autopilot/activity`) | 2 | 2 |
 | **/commits/main** (`/urvijain02/claude-autopilot/commits/main`) | 2 | 2 |
 | **/compare/phase-4-telemetry** (`/urvijain02/claude-autopilot/compare/phase-4-telemetry`) | 2 | 2 |
 | **/compare/phase-5-dev-ergonomics** (`/urvijain02/claude-autopilot/compare/phase-5-dev-ergonomics`) | 2 | 2 |
 | **/pull/2/commits** (`/urvijain02/claude-autopilot/pull/2/commits`) | 2 | 2 |
 | **/releases** (`/urvijain02/claude-autopilot/releases`) | 2 | 2 |
-| **/actions/runs/39410164482** (`/urvijain02/claude-autopilot/actions/runs/39410164482`) | 1 | 1 |
-| **/actions/runs/39410164482/job/118585688863** (`/urvijain02/claude-autopilot/actions/runs/39410164482/job/118585688863`) | 1 | 1 |
+| **/actions/runs/39410164482** (`/urvijain02/claude-autopilot/actions/runs/39410164482`) | 2 | 2 |
+| **/actions/runs/39410164482/job/118585688863** (`/urvijain02/claude-autopilot/actions/runs/39410164482/job/118585688863`) | 2 | 2 |
 
 ---
 
