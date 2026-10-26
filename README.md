@@ -1,6 +1,6 @@
 # 📊 Claude Autopilot — Traffic & Adoption Dashboard
 
-*Last updated: 2026-10-25 04:34 UTC*
+*Last updated: 2026-10-26 04:39 UTC*
 
 This branch (`traffic-data`) permanently archives repository telemetry, overcoming GitHub's 14-day rolling window deletion policy. All time-series data is persisted exclusively to this orphan branch, keeping `main` 100% clean.
 
@@ -30,8 +30,8 @@ flowchart LR
 | :--- | :--- |
 | **Total Page Views** | 78 |
 | **Cumulative Daily Uniques** | 5 |
-| **Total Git Clones** | 153 |
-| **Unique Git Cloners** | 74 |
+| **Total Git Clones** | 159 |
+| **Unique Git Cloners** | 80 |
 
 ---
 
@@ -59,16 +59,16 @@ flowchart LR
 
 | Document / Path | Page Views | Unique Readers |
 | :--- | :--- | :--- |
-| **/pulls** (`/urvijain02/claude-autopilot/pulls`) | 38 | 6 |
-| **/actions** (`/urvijain02/claude-autopilot/actions`) | 20 | 4 |
-| **/pull/4** (`/urvijain02/claude-autopilot/pull/4`) | 20 | 4 |
-| **/pull/2** (`/urvijain02/claude-autopilot/pull/2`) | 18 | 6 |
-| **/actions/workflows/traffic-archive.yml** (`/urvijain02/claude-autopilot/actions/workflows/traffic-archive.yml`) | 12 | 4 |
-| **/actions/runs/39072240583/job/117512071539** (`/urvijain02/claude-autopilot/actions/runs/39072240583/job/117512071539`) | 6 | 6 |
-| **/actions/runs/39072240583/job/117512071719** (`/urvijain02/claude-autopilot/actions/runs/39072240583/job/117512071719`) | 6 | 6 |
-| **/actions/runs/39410164482** (`/urvijain02/claude-autopilot/actions/runs/39410164482`) | 4 | 4 |
-| **/actions/runs/39410164482/job/118585688863** (`/urvijain02/claude-autopilot/actions/runs/39410164482/job/118585688863`) | 4 | 4 |
-| **/actions/runs/39413793156** (`/urvijain02/claude-autopilot/actions/runs/39413793156`) | 4 | 4 |
+| **/pulls** (`/urvijain02/claude-autopilot/pulls`) | 46 | 7 |
+| **/actions** (`/urvijain02/claude-autopilot/actions`) | 25 | 5 |
+| **/pull/4** (`/urvijain02/claude-autopilot/pull/4`) | 25 | 5 |
+| **/pull/2** (`/urvijain02/claude-autopilot/pull/2`) | 21 | 7 |
+| **/actions/workflows/traffic-archive.yml** (`/urvijain02/claude-autopilot/actions/workflows/traffic-archive.yml`) | 15 | 5 |
+| **/actions/runs/39072240583/job/117512071539** (`/urvijain02/claude-autopilot/actions/runs/39072240583/job/117512071539`) | 7 | 7 |
+| **/actions/runs/39072240583/job/117512071719** (`/urvijain02/claude-autopilot/actions/runs/39072240583/job/117512071719`) | 7 | 7 |
+| **/actions/runs/39410164482** (`/urvijain02/claude-autopilot/actions/runs/39410164482`) | 5 | 5 |
+| **/actions/runs/39410164482/job/118585688863** (`/urvijain02/claude-autopilot/actions/runs/39410164482/job/118585688863`) | 5 | 5 |
+| **/actions/runs/39413793156** (`/urvijain02/claude-autopilot/actions/runs/39413793156`) | 5 | 5 |
 | **/activity** (`/urvijain02/claude-autopilot/activity`) | 2 | 2 |
 | **/commits/main** (`/urvijain02/claude-autopilot/commits/main`) | 2 | 2 |
 | **/compare/phase-4-telemetry** (`/urvijain02/claude-autopilot/compare/phase-4-telemetry`) | 2 | 2 |
